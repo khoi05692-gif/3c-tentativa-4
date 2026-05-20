@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arena · Os 3 Caídos</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@300;400;700&display=swap');
+:root{
+  --bg:#04040a;--bg2:#07070f;--bg3:#0a0a16;--bg4:#0e0e1c;
+  --card:rgba(8,8,18,.97);
+  --br:rgba(255,255,255,.05);--br2:rgba(255,255,255,.1);--br3:rgba(255,255,255,.18);
+  --tx:#d4d0ee;--tx2:#6e6c8a;--tx3:#2e2d45;
+  --esp:#7ec8e3;--esp-b:rgba(126,200,227,.3);--esp-d:rgba(126,200,227,.07);--esp-g:rgba(126,200,227,.6);
+  --tempo:#6de8a8;--tempo-b:rgba(109,232,168,.3);--tempo-d:rgba(109,232,168,.07);--tempo-g:rgba(109,232,168,.6);
+  --real:#f05c5c;--real-b:rgba(240,92,92,.3);--real-d:rgba(240,92,92,.07);--real-g:rgba(240,92,92,.6);
+  --gold:#e8c44a;--gold-b:rgba(232,196,74,.3);--gold-d:rgba(232,196,74,.07);
+  --display:'Cinzel Decorative',serif;
+  --serif:'Cormorant Garamond',serif;
+  --mono:'JetBrains Mono',monospace;
+  --r:6px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--tx);font-family:var(--serif);font-size:15px;line-height:1.5;cursor:default;user-select:none;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9000;opacity:.4}
+.amb{position:fixed;border-radius:50%;filter:blur(200px);pointer-events:none;z-index:0;transition:all 2s ease}
+.amb-esp{width:600px;height:600px;background:var(--esp);top:-200px;left:-150px;opacity:.035}
+.amb-tempo{width:500px;height:500px;background:var(--tempo);bottom:-150px;left:30%;opacity:.03}
+.amb-real{width:550px;height:550px;background:var(--real);top:-100px;right:-150px;opacity:.03}
+
+#app{position:relative;z-index:1;display:grid;grid-template-rows:auto 1fr auto;height:100vh}
+
+/* TOP BAR */
+#topbar{display:flex;align-items:center;gap:12px;padding:9px 18px;background:rgba(4,4,10,.92);border-bottom:1px solid var(--br2);backdrop-filter:blur(20px);position:relative;z-index:100;flex-wrap:wrap}
+.topbar-title{font-family:var(--display);font-size:.72rem;font-weight:900;letter-spacing:.1em;color:var(--gold)}
+.topbar-sub{font-family:var(--mono);font-size:.42rem;letter-spacing:.28em;color:var(--tx3);text-transform:uppercase}
+.turn-badge{background:var(--gold-d);border:1px solid var(--gold-b);border-radius:4px;padding:4px 12px;font-family:var(--mono);font-size:.55rem;letter-spacing:.16em;color:var(--gold);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.turn-num{font-family:var(--display);font-size:.95rem;color:#fff}
+.topbar-spacer{flex:1}
+.top-btn{background:transparent;border:1px solid var(--br2);border-radius:4px;color:var(--tx2);font-family:var(--mono);font-size:.48rem;letter-spacing:.1em;padding:5px 10px;cursor:pointer;text-transform:uppercase;transition:all .2s}
+.top-btn:hover{border-color:var(--br3);color:var(--tx)}
+.top-btn.danger:hover{background:var(--real-d);border-color:var(--real-b);color:var(--real)}
+.top-btn.gold{border-color:var(--gold-b);color:var(--gold);background:var(--gold-d)}
+.top-btn.gold:hover{background:rgba(232,196,74,.15)}
+
+/* MAIN */
+#main{display:grid;grid-template-columns:1fr 330px;overflow:hidden;position:relative}
+
+/* ARENA */
+#arena{display:flex;flex-direction:column;gap:10px;padding:14px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--br3) transparent}
+
+/* PORTADORES */
+.portadores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.portador{background:var(--card);border:1px solid var(--br);border-radius:10px;position:relative;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.portador.esp{--el:var(--esp);--el-b:var(--esp-b);--el-d:var(--esp-d);--el-g:var(--esp-g);color:var(--esp)}
+.portador.tempo{--el:var(--tempo);--el-b:var(--tempo-b);--el-d:var(--tempo-d);--el-g:var(--tempo-g);color:var(--tempo)}
+.portador.real{--el:var(--real);--el-b:var(--real-b);--el-d:var(--real-d);--el-g:var(--real-g);color:var(--real)}
+.portador.active{border-color:var(--el);box-shadow:0 0 0 1px var(--el),0 0 28px -5px var(--el)}
+.portador.hidden-status .p-bars{filter:blur(5px);pointer-events:none}
+.p-topline{height:3px;background:linear-gradient(90deg,transparent,var(--el) 40%,var(--el-g) 60%,transparent);box-shadow:0 0 12px var(--el)}
+.p-head{padding:12px 14px 8px;display:flex;align-items:flex-start;gap:10px;position:relative}
+.p-gem{width:30px;height:30px;border-radius:4px;transform:rotate(45deg);flex-shrink:0}
+.esp .p-gem{background:radial-gradient(135deg,#c8ecff,var(--esp),#0a3a5a);box-shadow:0 0 16px rgba(126,200,227,.4)}
+.tempo .p-gem{background:radial-gradient(135deg,#b8ffd8,var(--tempo),#0a5a3a);box-shadow:0 0 16px rgba(109,232,168,.4)}
+.real .p-gem{background:radial-gradient(135deg,#ffd0d0,var(--real),#7a0a0a);box-shadow:0 0 16px rgba(240,92,92,.4)}
+.p-info{flex:1}
+.p-el-label{font-family:var(--mono);font-size:.4rem;letter-spacing:.26em;color:var(--el);text-transform:uppercase;margin-bottom:1px}
+.p-nome{font-family:var(--display);font-size:.8rem;font-weight:700;color:#fff;line-height:1.1}
+.p-jogador{font-family:var(--mono);font-size:.4rem;color:var(--tx3);margin-top:1px}
+.p-badges{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.p-badge{font-family:var(--mono);font-size:.38rem;letter-spacing:.08em;padding:1px 6px;border-radius:2px;border:1px solid var(--br2);color:var(--tx3);text-transform:uppercase}
+.active-indicator{width:7px;height:7px;border-radius:50%;background:var(--el);box-shadow:0 0 8px var(--el);animation:pulse-dot 1.5s ease-in-out infinite;position:absolute;top:12px;right:12px}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.6)}}
+
+/* BARS */
+.p-bars{padding:0 14px 10px;transition:filter .3s}
+.bar-line{margin-bottom:6px}
+.bar-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.bar-lbl{font-family:var(--mono);font-size:.41rem;letter-spacing:.12em;color:var(--tx3);text-transform:uppercase}
+.bar-val{font-family:var(--mono);font-size:.52rem;font-weight:700}
+.bar-track{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.bar-fill.hp{background:linear-gradient(90deg,#c0392b,#e74c3c,#ff6b6b)}
+.bar-fill.afi{background:linear-gradient(90deg,var(--el),var(--el-g))}
+.bar-fill.corr{background:linear-gradient(90deg,#4a1a6e,#8b2fc9,#c44dff)}
+.mini-stats{display:flex;gap:10px;margin-top:4px}
+.mini-stat{font-family:var(--mono);font-size:.42rem;color:var(--tx3)}
+.mini-stat span{color:#fff}
+
+/* CONTROLS - player pode ver seus próprios */
+.p-controls{padding:8px 14px 12px;display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--br)}
+.ctrl-row{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.ctrl-btn{background:var(--bg3);border:1px solid var(--br);border-radius:4px;color:var(--tx2);font-family:var(--mono);font-size:.44rem;letter-spacing:.08em;padding:5px 6px;cursor:pointer;text-transform:uppercase;transition:all .18s;text-align:center}
+.ctrl-btn:hover{border-color:var(--el-b);color:var(--el);background:var(--el-d)}
+.ctrl-btn.heal:hover{border-color:var(--tempo-b);color:var(--tempo);background:var(--tempo-d)}
+.ctrl-btn.damage:hover{border-color:var(--real-b);color:var(--real);background:var(--real-d)}
+.ctrl-btn.marco-btn{grid-column:1/-1;background:var(--el-d);border-color:var(--el-b);color:var(--el);font-size:.46rem;padding:7px}
+.ctrl-btn.marco-btn:hover{background:rgba(255,255,255,.06);box-shadow:0 0 18px -5px var(--el)}
+
+/* AFI stepper */
+.afi-stepper{display:flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--br);border-radius:4px;overflow:hidden}
+.afi-step-btn{background:none;border:none;color:var(--tx2);font-family:var(--mono);font-size:.75rem;padding:2px 8px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.afi-step-btn:hover{color:var(--el);background:var(--el-d)}
+.afi-step-input{background:transparent;border:none;color:var(--tx);font-family:var(--mono);font-size:.62rem;width:36px;text-align:center;outline:none;padding:4px 0}
+.afi-step-label{font-family:var(--mono);font-size:.38rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;flex:1;text-align:center;padding:0 4px}
+
+/* CONDITIONS on card */
+.p-conds{padding:0 14px 10px;display:flex;flex-wrap:wrap;gap:3px}
+.cond-chip{font-family:var(--mono);font-size:.4rem;letter-spacing:.06em;padding:2px 6px;border-radius:2px;border:1px solid rgba(240,92,92,.3);background:rgba(240,92,92,.06);color:#e07070;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.cond-chip:hover{background:rgba(240,92,92,.18)}
+
+/* ━━━ NPC SECTION ━━━ */
+.npcs-section{background:var(--card);border:2px solid rgba(232,196,74,.18);border-radius:10px;overflow:hidden;position:relative}
+.npcs-section::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold) 40%,rgba(232,196,74,.4) 60%,transparent);box-shadow:0 0 10px var(--gold)}
+.section-hdr{padding:10px 14px;background:rgba(232,196,74,.04);border-bottom:1px solid rgba(232,196,74,.12);display:flex;align-items:center;justify-content:space-between}
+.section-title{font-family:var(--display);font-size:.62rem;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.section-hdr-btns{display:flex;gap:5px}
+.sh-btn{background:var(--bg3);border:1px solid var(--br2);border-radius:4px;color:var(--tx2);font-family:var(--mono);font-size:.44rem;letter-spacing:.08em;padding:4px 10px;cursor:pointer;text-transform:uppercase;transition:all .18s;white-space:nowrap}
+.sh-btn:hover{border-color:var(--gold-b);color:var(--gold);background:var(--gold-d)}
+.sh-btn.danger:hover{border-color:var(--real-b);color:var(--real);background:var(--real-d)}
+
+.npc-grid{padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.npc-empty{text-align:center;padding:20px;font-family:var(--mono);font-size:.52rem;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase}
+
+.npc-card{background:var(--bg3);border:1px solid rgba(232,196,74,.12);border-radius:7px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.npc-card:hover{border-color:rgba(232,196,74,.28)}
+.npc-card.secret-npc{border-color:rgba(160,100,240,.25);background:rgba(50,0,80,.15)}
+.npc-card.secret-npc .npc-card-head{background:rgba(100,0,200,.08)}
+.npc-card.dead{opacity:.4}
+
+.npc-card-head{background:rgba(232,196,74,.04);padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(232,196,74,.08)}
+.npc-skull{font-size:.9rem}
+.npc-name-wrap{flex:1}
+.npc-name-display{font-family:var(--display);font-size:.78rem;font-weight:700;color:#fff}
+.npc-secret-badge{font-family:var(--mono);font-size:.38rem;letter-spacing:.1em;padding:1px 5px;border-radius:2px;border:1px solid rgba(160,100,240,.4);color:rgba(180,120,255,.8);background:rgba(100,0,200,.1);text-transform:uppercase;margin-left:5px}
+.npc-def-badge{font-family:var(--mono);font-size:.42rem;color:var(--tx3)}
+.npc-head-btns{display:flex;gap:4px}
+.npc-hbtn{background:none;border:1px solid var(--br2);border-radius:3px;color:var(--tx3);font-family:var(--mono);font-size:.42rem;padding:3px 7px;cursor:pointer;transition:all .15s;text-transform:uppercase}
+.npc-hbtn:hover{border-color:var(--gold-b);color:var(--gold)}
+.npc-hbtn.del:hover{border-color:var(--real-b);color:var(--real)}
+.npc-hbtn.secret-toggle{border-color:rgba(160,100,240,.3);color:rgba(180,120,255,.6)}
+.npc-hbtn.secret-toggle:hover{border-color:rgba(160,100,240,.6);color:rgba(180,120,255,1);background:rgba(100,0,200,.1)}
+
+.npc-card-body{padding:8px 12px}
+.npc-hp-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.npc-hp-label{font-family:var(--mono);font-size:.42rem;letter-spacing:.12em;color:var(--tx3);text-transform:uppercase;width:20px}
+.npc-hp-cur{background:var(--bg4);border:1px solid var(--br2);border-radius:3px;color:#fff;font-family:var(--display);font-size:.9rem;font-weight:700;width:56px;text-align:center;padding:3px 4px;outline:none}
+.npc-hp-cur:focus{border-color:rgba(240,92,92,.4)}
+.npc-hp-sep{font-family:var(--mono);font-size:.6rem;color:var(--tx3)}
+.npc-hp-max{font-family:var(--mono);font-size:.6rem;color:var(--tx2)}
+.npc-hp-track{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.npc-hp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#c0392b,#e74c3c,#ff6b6b);transition:width .4s}
+.npc-dmg-row{display:flex;gap:4px;align-items:center}
+.npc-dmg-input{background:var(--bg4);border:1px solid var(--br2);border-radius:3px;color:var(--tx);font-family:var(--mono);font-size:.6rem;width:52px;text-align:center;padding:3px;outline:none}
+.npc-dmg-input:focus{border-color:var(--gold-b)}
+.npc-act-btn{background:var(--real-d);border:1px solid var(--real-b);border-radius:3px;color:var(--real);font-family:var(--mono);font-size:.42rem;padding:4px 8px;cursor:pointer;transition:all .18s;text-transform:uppercase}
+.npc-act-btn:hover{background:rgba(240,92,92,.18)}
+.npc-act-btn.heal-btn{background:var(--tempo-d);border-color:var(--tempo-b);color:var(--tempo)}
+.npc-act-btn.heal-btn:hover{background:rgba(109,232,168,.18)}
+.npc-conds{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+
+/* LOG */
+#log-panel{background:var(--card);border:1px solid var(--br);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;max-height:200px}
+.log-scroll{flex:1;overflow-y:auto;padding:8px 12px;scrollbar-width:thin;scrollbar-color:var(--br3) transparent;display:flex;flex-direction:column;gap:2px}
+.log-entry{font-family:var(--mono);font-size:.48rem;color:var(--tx2);line-height:1.6;padding:1px 0;border-bottom:1px solid rgba(255,255,255,.02);display:flex;gap:7px;align-items:flex-start}
+.log-ts{color:var(--tx3);flex-shrink:0}
+.log-msg{flex:1}
+.log-msg.gm-only{color:var(--gold);opacity:.7}
+.log-msg.roll{color:#fff}
+.log-msg.damage{color:var(--real)}
+.log-msg.heal{color:var(--tempo)}
+.log-msg.marco{color:var(--gold)}
+.log-msg.hidden-msg{filter:blur(4px);cursor:pointer}
+
+/* SIDE */
+#side{border-left:1px solid var(--br);display:flex;flex-direction:column;overflow:hidden;background:rgba(4,4,10,.6);backdrop-filter:blur(10px)}
+
+/* DICE */
+#dice-panel{padding:14px;border-bottom:1px solid var(--br)}
+.panel-title{font-family:var(--display);font-size:.56rem;letter-spacing:.14em;color:var(--gold);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.panel-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--gold-b),transparent);opacity:.5}
+.dice-faces{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.die-btn{width:40px;height:40px;background:var(--bg3);border:1px solid var(--br2);border-radius:6px;color:var(--tx2);font-family:var(--display);font-size:.6rem;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center}
+.die-btn:hover{border-color:var(--gold-b);color:var(--gold);background:var(--gold-d);transform:translateY(-1px)}
+.die-btn:active{transform:translateY(0) scale(.93)}
+.roll-opts{display:flex;gap:5px;margin-bottom:8px;align-items:center}
+.roll-opts label{font-family:var(--mono);font-size:.43rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+.roll-opts input{background:var(--bg4);border:1px solid var(--br2);border-radius:4px;color:var(--tx);font-family:var(--mono);font-size:.62rem;width:44px;text-align:center;padding:3px;outline:none}
+.roll-opts input:focus{border-color:var(--gold-b)}
+.roll-visibility{display:flex;gap:5px;margin-bottom:8px}
+.vis-btn{flex:1;background:var(--bg3);border:1px solid var(--br);border-radius:4px;color:var(--tx3);font-family:var(--mono);font-size:.42rem;letter-spacing:.08em;padding:4px 5px;cursor:pointer;text-transform:uppercase;transition:all .18s;text-align:center}
+.vis-btn.on.pub{border-color:var(--tempo-b);color:var(--tempo);background:var(--tempo-d)}
+.vis-btn.on.sec{border-color:var(--gold-b);color:var(--gold);background:var(--gold-d)}
+#roll-display{text-align:center;padding:12px 10px;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.roll-big{font-family:var(--display);font-size:3rem;font-weight:900;color:#fff;line-height:1;text-shadow:0 0 40px rgba(232,196,74,.6);transition:all .3s}
+.roll-formula{font-family:var(--mono);font-size:.48rem;color:var(--tx3)}
+.roll-individual{font-family:var(--mono);font-size:.46rem;color:var(--tx2)}
+.roll-result-label{font-family:var(--mono);font-size:.43rem;letter-spacing:.18em;color:var(--gold);text-transform:uppercase}
+.hidden-indicator{font-family:var(--mono);font-size:.46rem;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;padding:2px 8px;border:1px solid var(--gold-b);border-radius:20px;background:var(--gold-d);margin-top:3px;display:none}
+.roll-btn-row{display:flex;gap:5px}
+.reveal-btn{flex:1;background:var(--gold-d);border:1px solid var(--gold-b);border-radius:4px;color:var(--gold);font-family:var(--mono);font-size:.48rem;letter-spacing:.1em;padding:6px;cursor:pointer;text-transform:uppercase;transition:all .2s}
+.reveal-btn:hover{background:rgba(232,196,74,.15);box-shadow:0 0 14px rgba(232,196,74,.2)}
+
+/* INITIATIVE */
+#init-panel{padding:12px 14px;border-bottom:1px solid var(--br);flex-shrink:0}
+.init-list{display:flex;flex-direction:column;gap:4px}
+.init-entry{display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--bg3);border:1px solid var(--br);border-radius:5px;transition:all .2s}
+.init-entry.current{border-color:var(--gold-b);background:var(--gold-d)}
+.init-order{font-family:var(--display);font-size:.7rem;font-weight:700;color:var(--gold);width:16px;text-align:center;flex-shrink:0}
+.init-name{font-family:var(--serif);font-size:.8rem;color:#fff;flex:1}
+.init-el-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.init-val-input{background:var(--bg4);border:1px solid var(--br2);border-radius:3px;color:var(--tx);font-family:var(--mono);font-size:.62rem;width:38px;text-align:center;padding:3px;outline:none}
+.init-val-input:focus{border-color:var(--gold-b)}
+
+/* CONDITIONS PANEL */
+#cond-panel{padding:12px 14px;flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--br3) transparent}
+.cond-target{font-family:var(--mono);font-size:.46rem;letter-spacing:.1em;color:var(--tx3);text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cond-target select{background:var(--bg3);border:1px solid var(--br);border-radius:3px;color:var(--tx);font-family:var(--mono);font-size:.52rem;padding:3px 5px;outline:none;cursor:pointer;flex:1}
+.cond-grid{display:flex;flex-wrap:wrap;gap:4px}
+.cond-toggle{font-family:var(--mono);font-size:.43rem;letter-spacing:.06em;padding:3px 8px;border-radius:3px;border:1px solid var(--br);background:var(--bg3);color:var(--tx3);cursor:pointer;text-transform:uppercase;transition:all .15s}
+.cond-toggle:hover{border-color:var(--br2);color:var(--tx)}
+.cond-toggle.on{border-color:rgba(240,92,92,.4);background:rgba(240,92,92,.1);color:#e07070}
+
+/* BOTTOM BAR */
+#bottombar{padding:9px 16px;background:rgba(4,4,10,.92);border-top:1px solid var(--br2);display:flex;align-items:center;gap:10px;backdrop-filter:blur(20px);position:relative;z-index:100}
+.turn-controls{display:flex;align-items:center;gap:7px}
+.tc-btn{background:var(--bg3);border:1px solid var(--br2);border-radius:4px;color:var(--tx2);font-family:var(--mono);font-size:.48rem;letter-spacing:.1em;padding:6px 12px;cursor:pointer;text-transform:uppercase;transition:all .2s}
+.tc-btn:hover{border-color:var(--gold-b);color:var(--gold);background:var(--gold-d)}
+.tc-btn.next{background:var(--gold-d);border-color:var(--gold-b);color:var(--gold);font-size:.52rem;padding:7px 16px}
+.tc-btn.next:hover{background:rgba(232,196,74,.15);box-shadow:0 0 14px rgba(232,196,74,.2)}
+.turn-display{font-family:var(--mono);font-size:.48rem;letter-spacing:.16em;color:var(--tx3);text-transform:uppercase}
+.turn-display strong{color:var(--gold);font-family:var(--display);font-size:.82rem}
+.bottombar-spacer{flex:1}
+.round-ctr{font-family:var(--mono);font-size:.46rem;letter-spacing:.12em;color:var(--tx3);text-transform:uppercase}
+.round-ctr strong{color:var(--tx);font-size:.62rem}
+
+/* ━━━ MARCO OVERLAY ━━━ */
+#marco-overlay{position:fixed;inset:0;z-index:8000;display:none;align-items:center;justify-content:center;flex-direction:column;overflow:hidden}
+#marco-overlay.active{display:flex}
+.marco-bg{position:absolute;inset:0;opacity:0;animation:marcoFadeIn .4s forwards}
+@keyframes marcoFadeIn{to{opacity:.94}}
+.marco-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.marco-content{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px;padding:40px}
+.marco-el-icon{font-size:3.5rem;animation:marcoIcon .6s cubic-bezier(.34,1.56,.64,1) both;filter:drop-shadow(0 0 40px var(--marco-color,#fff))}
+@keyframes marcoIcon{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+.marco-title{font-family:var(--display);font-size:2.8rem;font-weight:900;color:#fff;letter-spacing:.06em;text-shadow:0 0 60px var(--marco-color,#fff);animation:marcoTitle .5s .2s both;line-height:1.1}
+@keyframes marcoTitle{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.marco-portador{font-family:var(--mono);font-size:.65rem;letter-spacing:.28em;color:rgba(255,255,255,.45);text-transform:uppercase;animation:marcoTitle .5s .3s both}
+.marco-desc{font-family:var(--serif);font-size:1.05rem;color:rgba(255,255,255,.8);max-width:480px;line-height:1.7;animation:marcoTitle .5s .4s both;font-style:italic}
+.marco-close{font-family:var(--mono);font-size:.52rem;letter-spacing:.18em;padding:9px 26px;border-radius:4px;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.55);background:rgba(255,255,255,.05);cursor:pointer;text-transform:uppercase;transition:all .2s;animation:marcoTitle .5s .6s both;margin-top:8px}
+.marco-close:hover{background:rgba(255,255,255,.12);color:#fff}
+.particle{position:absolute;border-radius:50%;pointer-events:none;animation:particleFloat linear infinite}
+@keyframes particleFloat{0%{transform:translateY(0) translateX(0) scale(1);opacity:.8}100%{transform:translateY(-100vh) translateX(var(--dx)) scale(0);opacity:0}}
+
+/* DICE ANIM */
+#dice-anim{position:fixed;inset:0;z-index:7000;display:none;align-items:center;justify-content:center;pointer-events:none}
+#dice-anim.active{display:flex}
+.dice-anim-wrap{animation:diceAppear .2s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes diceAppear{from{transform:scale(0) rotate(-30deg)}to{transform:scale(1) rotate(0)}}
+.dice-3d{width:110px;height:110px;background:var(--bg2);border:2px solid var(--gold-b);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(232,196,74,.25);animation:diceRoll .7s ease-out;font-family:var(--display);font-size:2.8rem;font-weight:900;color:var(--gold)}
+@keyframes diceRoll{0%{transform:rotate(0) scale(1.2)}30%{transform:rotate(270deg) scale(.9)}70%{transform:rotate(400deg) scale(1.05)}100%{transform:rotate(360deg) scale(1)}}
+.dice-splash{position:absolute;width:110px;height:110px;border-radius:12px;background:radial-gradient(circle,rgba(232,196,74,.15),transparent 70%);animation:diceSplash .5s .3s both}
+@keyframes diceSplash{from{transform:scale(.5);opacity:1}to{transform:scale(3);opacity:0}}
+
+/* ━━━ CRITICAL ROLL FLASH ━━━ */
+@keyframes critFlash{0%,100%{background:rgba(232,196,74,0)}25%,75%{background:rgba(232,196,74,.15)}50%{background:rgba(232,196,74,.25)}}
+.crit-flash{animation:critFlash .8s ease}
+@keyframes failFlash{0%,100%{background:rgba(240,92,92,0)}25%,75%{background:rgba(240,92,92,.15)}50%{background:rgba(240,92,92,.25)}}
+.fail-flash{animation:failFlash .8s ease}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;z-index:6000;background:rgba(4,4,10,.88);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--br2);border-radius:10px;padding:22px;width:380px;max-width:92vw;position:relative}
+.modal.wide{width:480px}
+.modal-title{font-family:var(--display);font-size:.75rem;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;margin-bottom:14px}
+.modal label{font-family:var(--mono);font-size:.46rem;letter-spacing:.12em;color:var(--tx3);text-transform:uppercase;display:block;margin-bottom:3px}
+.modal input,.modal select,.modal textarea{background:var(--bg3);border:1px solid var(--br2);border-radius:4px;color:var(--tx);font-family:var(--serif);font-size:.9rem;padding:6px 9px;width:100%;outline:none;margin-bottom:9px}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--gold-b)}
+.modal-btns{display:flex;gap:7px;margin-top:4px}
+.modal-btn{flex:1;background:var(--bg3);border:1px solid var(--br2);border-radius:4px;color:var(--tx2);font-family:var(--mono);font-size:.5rem;letter-spacing:.08em;padding:7px;cursor:pointer;text-transform:uppercase;transition:all .2s}
+.modal-btn:hover{border-color:var(--br3);color:var(--tx)}
+.modal-btn.primary{background:var(--gold-d);border-color:var(--gold-b);color:var(--gold)}
+.modal-btn.primary:hover{background:rgba(232,196,74,.15)}
+.modal-btn.red{border-color:var(--real-b);color:var(--real)}
+.modal-btn.red:hover{background:var(--real-d)}
+.modal-btn.purple{border-color:rgba(160,100,240,.4);color:rgba(180,120,255,.9)}
+.modal-btn.purple:hover{background:rgba(100,0,200,.12)}
+.modal-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:.9rem;transition:color .15s}
+.modal-close:hover{color:var(--tx)}
+.delta-display{font-family:var(--display);font-size:1.7rem;font-weight:700;text-align:center;padding:8px;margin-bottom:9px;border-radius:6px;border:1px solid var(--br2)}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.secret-toggle-label{display:flex;align-items:center;gap:6px;margin-bottom:9px;cursor:pointer}
+.secret-toggle-label input[type=checkbox]{accent-color:#a855f7;width:14px;height:14px;cursor:pointer}
+.secret-toggle-label span{font-family:var(--mono);font-size:.48rem;letter-spacing:.1em;color:rgba(180,120,255,.8);text-transform:uppercase}
+.hidden-status-toggle{display:flex;align-items:center;gap:6px;cursor:pointer}
+.hidden-status-toggle input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:pointer}
+.hidden-status-toggle span{font-family:var(--mono);font-size:.46rem;letter-spacing:.1em;color:var(--tx2);text-transform:uppercase}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--br3);border-radius:2px}
+
+/* ━━━ CLIMA / AMBIENTE ━━━ */
+body.clima-masmorra{--clima-tint:rgba(60,20,80,.18)}
+body.clima-floresta{--clima-tint:rgba(20,80,30,.18)}
+body.clima-cidade{--clima-tint:rgba(40,60,100,.14)}
+body.clima-etereo{--clima-tint:rgba(100,40,180,.22)}
+body.clima-vulcao{--clima-tint:rgba(160,40,0,.18)}
+body.clima-abismo{--clima-tint:rgba(0,0,0,.35)}
+body::before{content:'';position:fixed;inset:0;background:var(--clima-tint,transparent);pointer-events:none;z-index:0;transition:background 1.8s ease}
+.clima-overlay-color{transition:background 1.8s ease,border-color 1.8s ease,box-shadow 1.8s ease}
+
+#clima-panel{padding:12px 14px;border-bottom:1px solid var(--br);flex-shrink:0}
+.clima-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px}
+.clima-btn{background:var(--bg3);border:1px solid var(--br);border-radius:5px;color:var(--tx3);font-family:var(--mono);font-size:.41rem;letter-spacing:.07em;padding:5px 4px;cursor:pointer;text-transform:uppercase;transition:all .2s;text-align:center;line-height:1.4}
+.clima-btn:hover{border-color:var(--br2);color:var(--tx)}
+.clima-btn.on{color:#fff;border-width:1px}
+.clima-btn.on.masmorra{border-color:rgba(180,80,255,.5);background:rgba(60,0,100,.25);box-shadow:0 0 10px rgba(100,0,200,.2)}
+.clima-btn.on.floresta{border-color:rgba(80,200,100,.5);background:rgba(0,60,20,.25);box-shadow:0 0 10px rgba(20,180,60,.2)}
+.clima-btn.on.cidade{border-color:rgba(80,140,255,.5);background:rgba(0,20,80,.22);box-shadow:0 0 10px rgba(40,100,255,.2)}
+.clima-btn.on.etereo{border-color:rgba(200,120,255,.6);background:rgba(80,0,180,.22);box-shadow:0 0 10px rgba(180,60,255,.25)}
+.clima-btn.on.vulcao{border-color:rgba(255,100,30,.5);background:rgba(120,20,0,.25);box-shadow:0 0 10px rgba(255,60,0,.2)}
+.clima-btn.on.abismo{border-color:rgba(120,80,180,.4);background:rgba(0,0,30,.4);box-shadow:0 0 10px rgba(80,0,150,.2)}
+.clima-nome{font-family:var(--mono);font-size:.38rem;letter-spacing:.14em;color:var(--tx3);text-transform:uppercase;margin-top:7px;text-align:center}
+.clima-nome span{color:var(--tx2)}
+
+/* ━━━ REAÇÃO ELEMENTAL OVERLAY ━━━ */
+#reacao-overlay{position:fixed;inset:0;z-index:8500;display:none;align-items:center;justify-content:center;flex-direction:column;overflow:hidden;pointer-events:none}
+#reacao-overlay.active{display:flex;pointer-events:all}
+.reacao-bg{position:absolute;inset:0;opacity:0;animation:reacaoFade .35s forwards}
+@keyframes reacaoFade{to{opacity:.96}}
+.reacao-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.reacao-content{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px}
+.reacao-symbols{display:flex;align-items:center;gap:16px;font-size:2.8rem;animation:reacaoSymb .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes reacaoSymb{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.reacao-plus{font-family:var(--display);font-size:1.8rem;color:rgba(255,255,255,.3);animation:reacaoSymb .5s .1s both}
+.reacao-arrow{font-family:var(--display);font-size:1.4rem;color:rgba(255,255,255,.3);animation:reacaoSymb .5s .2s both}
+.reacao-nome{font-family:var(--display);font-size:3.2rem;font-weight:900;color:#fff;letter-spacing:.05em;text-shadow:0 0 60px var(--reacao-color,#fff),0 0 120px var(--reacao-color2,#fff);animation:reacaoNome .45s .25s both;line-height:1}
+@keyframes reacaoNome{from{transform:translateY(28px) scale(.9);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.reacao-desc{font-family:var(--serif);font-size:1.05rem;color:rgba(255,255,255,.8);max-width:520px;line-height:1.7;font-style:italic;animation:reacaoNome .45s .4s both}
+.reacao-portadores{font-family:var(--mono);font-size:.58rem;letter-spacing:.22em;color:rgba(255,255,255,.38);text-transform:uppercase;animation:reacaoNome .45s .35s both}
+.reacao-close{font-family:var(--mono);font-size:.5rem;letter-spacing:.18em;padding:9px 28px;border-radius:4px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.5);background:rgba(255,255,255,.04);cursor:pointer;text-transform:uppercase;transition:all .2s;animation:reacaoNome .45s .6s both;margin-top:10px}
+.reacao-close:hover{background:rgba(255,255,255,.1);color:#fff}
+.reacao-shockwave{position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;border:3px solid var(--reacao-color,#fff);transform:translate(-50%,-50%);animation:shockwave 1.2s ease-out forwards}
+@keyframes shockwave{to{width:160vw;height:160vw;opacity:0;border-width:0px}}
+
+/* ━━━ BOTÃO REAÇÃO NA TOPBAR ━━━ */
+.top-btn.reacao{border-color:rgba(255,200,80,.3);color:rgba(255,200,80,.8);background:rgba(255,150,0,.05)}
+.top-btn.reacao:hover{background:rgba(255,150,0,.12);border-color:rgba(255,200,80,.6);color:#ffd080}
+
+/* ━━━ ALERTA "SUA VEZ" ━━━ */
+#sua-vez-banner{position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-120%);z-index:9500;background:linear-gradient(135deg,rgba(232,196,74,.18),rgba(232,196,74,.08));border:1px solid var(--gold-b);border-top:none;border-radius:0 0 12px 12px;padding:10px 32px 12px;text-align:center;backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(232,196,74,.15);transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+#sua-vez-banner.visible{transform:translateX(-50%) translateY(0)}
+.svb-label{font-family:var(--mono);font-size:.42rem;letter-spacing:.3em;color:var(--tx3);text-transform:uppercase;margin-bottom:2px}
+.svb-nome{font-family:var(--display);font-size:1.1rem;font-weight:900;color:var(--gold);letter-spacing:.06em;text-shadow:0 0 20px rgba(232,196,74,.4)}
+.svb-sub{font-family:var(--mono);font-size:.4rem;letter-spacing:.18em;color:var(--tx3);text-transform:uppercase;margin-top:3px}
+
+/* ━━━ MODAL REAÇÃO ━━━ */
+#modal-reacao .modal{width:420px}
+.reacao-pair-select{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:12px}
+.reacao-pair-sep{font-family:var(--display);font-size:1.1rem;color:var(--tx3);text-align:center}
+.reacao-preview{background:var(--bg3);border:1px solid var(--br2);border-radius:6px;padding:12px;text-align:center;margin-bottom:12px;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .3s}
+.rp-nome{font-family:var(--display);font-size:1rem;font-weight:700;color:#fff}
+.rp-desc{font-family:var(--serif);font-size:.82rem;color:var(--tx2);font-style:italic}
+</style>
+</head>
+<body>
+<div class="amb amb-esp"></div>
+<div class="amb amb-tempo"></div>
+<div class="amb amb-real"></div>
+
+<!-- ══ MARCO OVERLAY ══ -->
+<div id="marco-overlay">
+  <div class="marco-bg" id="marco-bg"></div>
+  <div class="marco-particles" id="marco-particles"></div>
+  <div class="marco-content">
+    <div class="marco-el-icon" id="marco-icon">⬡</div>
+    <div class="marco-portador" id="marco-portador">PORTADOR</div>
+    <div class="marco-title" id="marco-title">Marco</div>
+    <div class="marco-desc" id="marco-desc"></div>
+    <button class="marco-close" onclick="closeMarco()">◈ Fechar ◈</button>
+  </div>
+</div>
+
+<!-- ══ REAÇÃO ELEMENTAL OVERLAY ══ -->
+<div id="reacao-overlay">
+  <div class="reacao-bg" id="reacao-bg"></div>
+  <div class="reacao-particles" id="reacao-particles"></div>
+  <div class="reacao-shockwave" id="reacao-shockwave"></div>
+  <div class="reacao-content">
+    <div class="reacao-symbols">
+      <span id="reacao-icon-a">◇</span>
+      <span class="reacao-plus">+</span>
+      <span id="reacao-icon-b">◈</span>
+      <span class="reacao-arrow">→</span>
+    </div>
+    <div class="reacao-portadores" id="reacao-portadores">ESPAÇO + TEMPO</div>
+    <div class="reacao-nome" id="reacao-nome">Relativisação</div>
+    <div class="reacao-desc" id="reacao-desc"></div>
+    <button class="reacao-close" onclick="closeReacao()">⬡ Fechar ⬡</button>
+  </div>
+</div>
+
+<!-- ══ "SUA VEZ" BANNER ══ -->
+<div id="sua-vez-banner">
+  <div class="svb-label">⚡ Sua Vez</div>
+  <div class="svb-nome" id="svb-nome">—</div>
+  <div class="svb-sub">Clique para fechar</div>
+</div>
+
+<!-- ══ MODAL: REAÇÃO ELEMENTAL ══ -->
+<div class="modal-overlay" id="modal-reacao">
+  <div class="modal" id="modal-reacao-inner">
+    <button class="modal-close" onclick="closeModal('modal-reacao')">✕</button>
+    <div class="modal-title">⚗ Reação Elemental</div>
+    <div class="reacao-pair-select">
+      <div>
+        <label>Elemento A</label>
+        <select id="reacao-el-a" onchange="previewReacao()">
+          <option value="espaco">◇ Espaço</option>
+          <option value="tempo">◈ Tempo</option>
+          <option value="realidade">⬡ Realidade</option>
+        </select>
+      </div>
+      <div class="reacao-pair-sep">+</div>
+      <div>
+        <label>Elemento B</label>
+        <select id="reacao-el-b" onchange="previewReacao()">
+          <option value="tempo">◈ Tempo</option>
+          <option value="espaco">◇ Espaço</option>
+          <option value="realidade">⬡ Realidade</option>
+        </select>
+      </div>
+    </div>
+    <div class="reacao-preview" id="reacao-preview">
+      <div class="rp-nome" id="rp-nome">Relativisação</div>
+      <div class="rp-desc" id="rp-desc">O espaço-tempo se dobra ao redor dos portadores…</div>
+    </div>
+    <label>Descrição personalizada (opcional)</label>
+    <textarea id="reacao-desc-custom" style="min-height:55px" placeholder="Deixe em branco para usar a padrão…"></textarea>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('modal-reacao')">Cancelar</button>
+      <button class="modal-btn primary" onclick="triggerReacao()">⚗ Ativar Reação</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DICE ANIM ══ -->
+<div id="dice-anim">
+  <div class="dice-anim-wrap">
+    <div class="dice-3d" id="dice-face">20</div>
+    <div class="dice-splash"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: HP ══ -->
+<div class="modal-overlay" id="modal-hp">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-hp')">✕</button>
+    <div class="modal-title" id="modal-hp-title">Dano / Cura</div>
+    <label>Quantidade</label>
+    <input type="number" id="modal-hp-val" placeholder="0" min="0" oninput="updateDelta()">
+    <div class="delta-display" id="delta-display">0</div>
+    <div class="modal-btns">
+      <button class="modal-btn red" onclick="applyHP('damage')">⚔ Dano</button>
+      <button class="modal-btn" style="border-color:var(--tempo-b);color:var(--tempo)" onclick="applyHP('heal')">✦ Curar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: MARCO ══ -->
+<div class="modal-overlay" id="modal-marco">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-marco')">✕</button>
+    <div class="modal-title" id="marco-modal-title">Ativar Marco</div>
+    <label>Nome do Marco</label>
+    <input type="text" id="marco-nome-input" placeholder="Ex: Pulso Temporal">
+    <label>Descrição</label>
+    <textarea id="marco-desc-input" style="min-height:70px" placeholder="O que acontece…"></textarea>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('modal-marco')">Cancelar</button>
+      <button class="modal-btn primary" onclick="triggerMarco()">⚡ Ativar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: ADD NPC ══ -->
+<div class="modal-overlay" id="modal-npc">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-npc')">✕</button>
+    <div class="modal-title">Adicionar NPC / Inimigo</div>
+    <label>Nome</label>
+    <input type="text" id="npc-nome-input" placeholder="Nome">
+    <div class="modal-row">
+      <div><label>PV Máximo</label><input type="number" id="npc-hp-input" placeholder="50" min="1"></div>
+      <div><label>Defesa</label><input type="number" id="npc-def-input" placeholder="14" min="0"></div>
+    </div>
+    <label>Iniciativa</label>
+    <input type="number" id="npc-init-input" placeholder="0">
+    <label>Notas (só o Mestre vê)</label>
+    <textarea id="npc-notes-input" placeholder="Habilidades, fraquezas, segredos…" style="min-height:55px"></textarea>
+    <label class="secret-toggle-label">
+      <input type="checkbox" id="npc-secret-check">
+      <span>🔮 NPC Secreto — nome oculto dos players</span>
+    </label>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('modal-npc')">Cancelar</button>
+      <button class="modal-btn primary" onclick="confirmAddNPC()">+ Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: NPC NOTAS ══ -->
+<div class="modal-overlay" id="modal-npc-notes">
+  <div class="modal wide">
+    <button class="modal-close" onclick="closeModal('modal-npc-notes')">✕</button>
+    <div class="modal-title" id="npc-notes-modal-title">Notas do NPC</div>
+    <textarea id="npc-notes-edit" style="min-height:120px"></textarea>
+    <label class="hidden-status-toggle" style="margin-bottom:10px">
+      <input type="checkbox" id="npc-hide-status-check" onchange="toggleNPCHideStatus()">
+      <span>👁 Ocultar barra de vida dos players</span>
+    </label>
+    <label class="secret-toggle-label">
+      <input type="checkbox" id="npc-secret-edit-check" onchange="toggleNPCSecret()">
+      <span>🔮 NPC Secreto (nome oculto)</span>
+    </label>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="saveNPCNotes()">Salvar Notas</button>
+      <button class="modal-btn red" onclick="confirmRemoveNPC()">Remover NPC</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: IMPORT ══ -->
+<div class="modal-overlay" id="modal-import" style="display:none">
+  <div class="modal wide">
+    <div class="modal-title">⬡ Arena · Os 3 Caídos</div>
+    <p style="font-family:var(--serif);font-size:.88rem;color:var(--tx2);line-height:1.7;margin-bottom:14px">
+      Importe os <strong style="color:#fff">.json</strong> exportados pelas fichas. O Mestre controla tudo — players veem o painel de seu personagem.
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <label style="display:block">
+        <div style="font-family:var(--mono);font-size:.43rem;letter-spacing:.12em;color:var(--esp);text-transform:uppercase;margin-bottom:4px;text-align:center">◇ Espaço</div>
+        <div style="background:var(--esp-d);border:1px dashed var(--esp-b);border-radius:6px;padding:10px 6px;text-align:center;cursor:pointer;font-family:var(--mono);font-size:.46rem;color:var(--esp);transition:all .2s" id="esp-import-label">Importar JSON</div>
+        <input type="file" accept=".json" style="display:none" onchange="importFicha('espaco',this)">
+      </label>
+      <label style="display:block">
+        <div style="font-family:var(--mono);font-size:.43rem;letter-spacing:.12em;color:var(--tempo);text-transform:uppercase;margin-bottom:4px;text-align:center">◈ Tempo</div>
+        <div style="background:var(--tempo-d);border:1px dashed var(--tempo-b);border-radius:6px;padding:10px 6px;text-align:center;cursor:pointer;font-family:var(--mono);font-size:.46rem;color:var(--tempo);transition:all .2s" id="tempo-import-label">Importar JSON</div>
+        <input type="file" accept=".json" style="display:none" onchange="importFicha('tempo',this)">
+      </label>
+      <label style="display:block">
+        <div style="font-family:var(--mono);font-size:.43rem;letter-spacing:.12em;color:var(--real);text-transform:uppercase;margin-bottom:4px;text-align:center">⬡ Realidade</div>
+        <div style="background:var(--real-d);border:1px dashed var(--real-b);border-radius:6px;padding:10px 6px;text-align:center;cursor:pointer;font-family:var(--mono);font-size:.46rem;color:var(--real);transition:all .2s" id="real-import-label">Importar JSON</div>
+        <input type="file" accept=".json" style="display:none" onchange="importFicha('realidade',this)">
+      </label>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('modal-import');initArena()">Entrar sem fichas</button>
+      <button class="modal-btn primary" onclick="closeModal('modal-import');initArena()">⚔ Entrar na Arena</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+  <div id="topbar">
+    <div>
+      <div class="topbar-title">Arena · Os 3 Caídos</div>
+      <div class="topbar-sub">Tela de Combate</div>
+    </div>
+    <div class="turn-badge">Turno <span class="turn-num" id="turn-num">1</span></div>
+    <div class="topbar-spacer"></div>
+    <div id="fb-dot" style="width:8px;height:8px;border-radius:50%;background:var(--real);box-shadow:0 0 6px var(--real);flex-shrink:0;transition:all .5s" title="Status Firebase"></div>
+    <button class="top-btn reacao" onclick="openModal('modal-reacao')">⚗ Reação</button>
+    <button class="top-btn" onclick="toggleMode()" id="mode-btn">Modo: Mestre 👑</button>
+    <button class="top-btn" onclick="openModal('modal-import')">↑ Fichas</button>
+    <button class="top-btn danger" onclick="confirmReset()">↺ Resetar</button>
+  </div>
+
+  <div id="main">
+    <div id="arena">
+      <div class="portadores-grid" id="portadores-grid"></div>
+      <div class="npcs-section">
+        <div class="section-hdr">
+          <div class="section-title">⚔ Adversários em Campo</div>
+          <div class="section-hdr-btns" id="npc-mestre-btns">
+            <button class="sh-btn" onclick="openModal('modal-npc')">+ Inimigo</button>
+          </div>
+        </div>
+        <div class="npc-grid" id="npc-grid">
+          <div class="npc-empty" id="npc-empty">Nenhum adversário em campo</div>
+        </div>
+      </div>
+      <div id="log-panel">
+        <div class="section-hdr" style="border-bottom:1px solid var(--br)">
+          <div class="section-title" style="color:var(--tx2)">📜 Log</div>
+          <button class="sh-btn" onclick="clearLog()">Limpar</button>
+        </div>
+        <div class="log-scroll" id="log-scroll"></div>
+      </div>
+    </div>
+
+    <div id="side">
+      <div id="clima-panel">
+        <div class="panel-title">🌐 Ambiente</div>
+        <div class="clima-grid">
+          <button class="clima-btn masmorra" id="clima-masmorra" onclick="setClima('masmorra')">🕳 Masmorra</button>
+          <button class="clima-btn floresta" id="clima-floresta" onclick="setClima('floresta')">🌿 Floresta</button>
+          <button class="clima-btn cidade" id="clima-cidade" onclick="setClima('cidade')">🏛 Cidade</button>
+          <button class="clima-btn etereo" id="clima-etereo" onclick="setClima('etereo')">✨ Plano Etéreo</button>
+          <button class="clima-btn vulcao" id="clima-vulcao" onclick="setClima('vulcao')">🌋 Vulcão</button>
+          <button class="clima-btn abismo" id="clima-abismo" onclick="setClima('abismo')">🌑 Abismo</button>
+        </div>
+        <div class="clima-nome">Cenário: <span id="clima-nome-display">Nenhum</span></div>
+      </div>
+      <div id="dice-panel">
+        <div class="panel-title">🎲 Rolador</div>
+        <div class="dice-faces">
+          <button class="die-btn" onclick="roll(4)">d4</button>
+          <button class="die-btn" onclick="roll(6)">d6</button>
+          <button class="die-btn" onclick="roll(8)">d8</button>
+          <button class="die-btn" onclick="roll(10)">d10</button>
+          <button class="die-btn" onclick="roll(12)">d12</button>
+          <button class="die-btn" onclick="roll(20)">d20</button>
+          <button class="die-btn" onclick="roll(100)">d%</button>
+        </div>
+        <div class="roll-opts">
+          <label>Qtd</label><input type="number" id="r-qty" value="1" min="1" max="20">
+          <label>Mod</label><input type="number" id="r-mod" value="0">
+        </div>
+        <div class="roll-visibility" id="vis-btns">
+          <button class="vis-btn on pub" id="vis-pub" onclick="setVisibility('public')">🌐 Público</button>
+          <button class="vis-btn sec" id="vis-sec" onclick="setVisibility('secret')">🔒 Secreto</button>
+        </div>
+        <div id="roll-display">
+          <div class="roll-result-label">Resultado</div>
+          <div class="roll-big" id="roll-big">—</div>
+          <div class="roll-individual" id="roll-individual"></div>
+          <div class="roll-formula" id="roll-formula"></div>
+          <div class="hidden-indicator" id="hidden-indicator">🔒 Só o mestre vê</div>
+        </div>
+        <div class="roll-btn-row" id="reveal-row" style="display:none">
+          <button class="reveal-btn" onclick="revealLastRoll()">👁 Revelar para todos</button>
+        </div>
+      </div>
+
+      <div id="init-panel">
+        <div class="panel-title">⚡ Iniciativa</div>
+        <div class="init-list" id="init-list"></div>
+        <button class="sh-btn" style="margin-top:7px;width:100%" onclick="sortInitiative()">↑↓ Ordenar</button>
+      </div>
+
+      <div id="cond-panel">
+        <div class="panel-title">⚠ Condições</div>
+        <div class="cond-target">
+          Aplicar em:
+          <select id="cond-target-sel" onchange="renderCondGrid()">
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
+        <div class="cond-grid" id="cond-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bottombar">
+    <div class="turn-controls">
+      <button class="tc-btn" onclick="prevTurn()">◀</button>
+      <button class="tc-btn next" onclick="nextTurn()">Próximo Turno ▶</button>
+    </div>
+    <div class="turn-display">Vez de: <strong id="current-turn-name">—</strong></div>
+    <div class="bottombar-spacer"></div>
+    <div class="round-ctr">Round <strong id="round-num">1</strong></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const SAVE_KEY = 'arena_3caidos_v2';
+const EL = {
+  espaco:    { label:'◇ Espaço',    color:'var(--esp)',  cls:'esp',  icon:'◇', marcoBg:'rgba(0,15,30,.96)',   accent:'#7ec8e3' },
+  tempo:     { label:'◈ Tempo',     color:'var(--tempo)',cls:'tempo',icon:'◈', marcoBg:'rgba(0,20,12,.96)',   accent:'#6de8a8' },
+  realidade: { label:'⬡ Realidade', color:'var(--real)', cls:'real', icon:'⬡', marcoBg:'rgba(25,0,0,.96)',    accent:'#f05c5c' },
+};
+const CONDICOES = ['Imobilizado','Atordoado','Amedrontado','Sangrando','Envenenado','Lento','Paralisado','Cego','Confuso','Esgotado','Marcado','Congelado','Exposto','Enfraquecido','Desorientado','Inflamado'];
+
+let state = {
+  mode: 'mestre',
+  turn: 0, round: 1,
+  rollVisibility: 'public',
+  lastRoll: null,
+  clima: null,
+  portadores: {
+    espaco:    mkPortador(),
+    tempo:     mkPortador(),
+    realidade: mkPortador(),
+  },
+  npcs: [],
+  initiative: [
+    { id:'espaco',    nome:'Portador de Espaço', init:0, tipo:'portador' },
+    { id:'tempo',     nome:'Portador de Tempo',  init:0, tipo:'portador' },
+    { id:'realidade', nome:'Portador de Realidade', init:0, tipo:'portador' },
+  ],
+  log: [],
+  hiddenStatuses: {},   // tipo -> bool (mestre oculta status dos players)
+  marcoTarget: null,
+};
+
+function mkPortador(){
+  return { nome:'—', jogador:'—', nivel:1, hp:22, hpMax:22, afi:30, afiMax:30, corr:0, def:14, res:15, conditions:[], ficha:null };
+}
+
+// ═══════════════════════════════════════════════════════
+// IMPORT FICHAS
+// ═══════════════════════════════════════════════════════
+function importFicha(tipo, input) {
+  const file = input.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      applyFichaToState(tipo, data);
+      const labels = { espaco:'esp-import-label', tempo:'tempo-import-label', realidade:'real-import-label' };
+      document.getElementById(labels[tipo]).textContent = '✓ ' + state.portadores[tipo].nome;
+      input.value = '';
+    } catch(err) { alert('JSON inválido.'); }
+  };
+  r.readAsText(file);
+}
+
+function applyFichaToState(tipo, data) {
+  const f = data.fixed || {};
+  const p = state.portadores[tipo];
+  p.nome    = f['id-nome']     || tipo;
+  p.jogador = f['id-jogador']  || '—';
+  p.nivel   = parseInt(f['nivel-input']) || 1;
+  p.hp      = parseInt(f['bar-vida-cur'])|| 22;
+  p.hpMax   = parseInt(f['bar-vida-max'])|| 22;
+  p.afi     = parseInt(f['bar-afi-cur']) || 30;
+  p.afiMax  = parseInt(f['bar-afi-max']) || 30;
+  p.corr    = parseInt(f['corr-main'])   || 0;
+  p.def     = parseInt(f['der-def'])     || 14;
+  p.res     = parseInt(f['der-res'])     || 15;
+  p.ficha   = data;
+  p.conditions = [];
+  if(data.chips) {
+    data.chips.forEach(({i, checked}) => { if(checked && CONDICOES[i]) p.conditions.push(CONDICOES[i]); });
+  }
+  const ie = state.initiative.find(e => e.id === tipo);
+  if(ie) ie.nome = p.nome;
+  addLog(`${EL[tipo].icon} ${p.nome} entrou na arena.`, 'marco');
+  renderAll(); save();
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+function renderAll() {
+  renderPortadores();
+  renderNPCs();
+  renderInitiative();
+  renderCondTarget();
+  renderCondGrid();
+  renderCurrentTurn();
+  renderClima();
+  document.getElementById('turn-num').textContent = state.turn + 1;
+  document.getElementById('round-num').textContent = state.round;
+  // NPC mestre-only buttons
+  document.getElementById('npc-mestre-btns').style.display = state.mode === 'mestre' ? 'flex' : 'none';
+}
+
+// ── PORTADORES ──
+function renderPortadores() {
+  const grid = document.getElementById('portadores-grid');
+  grid.innerHTML = '';
+  Object.entries(state.portadores).forEach(([tipo, p]) => {
+    const el = EL[tipo];
+    const isActive = state.initiative[state.turn]?.id === tipo;
+    const isMestre = state.mode === 'mestre';
+    const isHidden = state.hiddenStatuses[tipo] && !isMestre;
+    const hpPct  = Math.max(0, Math.min(100, (p.hp / p.hpMax) * 100));
+    const afiPct = Math.max(0, Math.min(100, (p.afi / p.afiMax) * 100));
+    const corrPct= Math.max(0, Math.min(100, (p.corr / 50) * 100));
+
+    const card = document.createElement('div');
+    card.className = `portador ${el.cls}${isActive?' active':''}${isHidden?' hidden-status':''}`;
+    card.id = `portador-${tipo}`;
+
+    // Controls: mestre vê tudo, player controla seu próprio personagem
+    const showControls = isMestre || true; // players always get controls for their own char
+    const isPlayer = !isMestre;
+
+    card.innerHTML = `
+      <div class="p-topline"></div>
+      <div class="p-head">
+        <div class="p-gem"></div>
+        <div class="p-info">
+          <div class="p-el-label">${el.icon} ${el.label.split(' ')[1]}</div>
+          <div class="p-nome">${p.nome}</div>
+          <div class="p-jogador">${p.jogador}</div>
+          <div class="p-badges">
+            <span class="p-badge">Nv ${p.nivel}</span>
+            <span class="p-badge">DEF ${p.def}</span>
+            <span class="p-badge">RES ${p.res}</span>
+          </div>
+        </div>
+        ${isActive ? '<div class="active-indicator"></div>' : ''}
+      </div>
+
+      <div class="p-bars">
+        ${isHidden ? '<div style="font-family:var(--mono);font-size:.46rem;color:var(--tx3);text-align:center;padding:10px 0;letter-spacing:.14em;text-transform:uppercase">👁 Status oculto pelo Mestre</div>' : `
+        <div class="bar-line">
+          <div class="bar-meta">
+            <div class="bar-lbl">⚔ Vida</div>
+            <div class="bar-val" style="color:#e07070">${p.hp} / ${p.hpMax}</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill hp" style="width:${hpPct}%"></div></div>
+        </div>
+        <div class="bar-line">
+          <div class="bar-meta">
+            <div class="bar-lbl">${el.icon} Afinidade</div>
+            <div class="bar-val" style="color:${el.color}">${p.afi} / ${p.afiMax}</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill afi" style="width:${afiPct}%"></div></div>
+        </div>
+        <div class="bar-line">
+          <div class="bar-meta">
+            <div class="bar-lbl">⚡ Corrupção</div>
+            <div class="bar-val" style="color:#a855f7">${p.corr} / 50</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill corr" style="width:${corrPct}%"></div></div>
+        </div>`}
+      </div>
+
+      ${p.conditions.length ? `<div class="p-conds">${p.conditions.map(c => `<div class="cond-chip" onclick="removeCondPortador('${tipo}','${c}')">${c} ✕</div>`).join('')}</div>` : ''}
+
+      <div class="p-controls">
+        <div class="ctrl-row">
+          <button class="ctrl-btn damage" onclick="openHPModal('${tipo}','damage')">⚔ Dano</button>
+          <button class="ctrl-btn heal" onclick="openHPModal('${tipo}','heal')">✦ Curar</button>
+        </div>
+
+        <!-- AFI STEPPER VARIÁVEL -->
+        <div style="font-family:var(--mono);font-size:.4rem;letter-spacing:.12em;color:var(--tx3);text-transform:uppercase;margin-bottom:2px">Afinidade</div>
+        <div class="afi-stepper">
+          <button class="afi-step-btn" onclick="adjustAfi('${tipo}',-10)" title="-10">−10</button>
+          <button class="afi-step-btn" onclick="adjustAfi('${tipo}',-5)" title="-5">−5</button>
+          <button class="afi-step-btn" onclick="adjustAfi('${tipo}',-1)" title="-1">−1</button>
+          <span class="afi-step-label">Afi</span>
+          <button class="afi-step-btn" onclick="adjustAfi('${tipo}',+1)" title="+1">+1</button>
+          <button class="afi-step-btn" onclick="adjustAfi('${tipo}',+5)" title="+5">+5</button>
+          <button class="afi-step-btn" onclick="adjustAfi('${tipo}',+10)" title="+10">+10</button>
+        </div>
+
+        <div class="ctrl-row">
+          <button class="ctrl-btn" onclick="adjustCorr('${tipo}',+1)">Corr +1</button>
+          <button class="ctrl-btn" onclick="adjustCorr('${tipo}',-1)">Corr −1</button>
+        </div>
+
+        ${isMestre ? `
+        <div class="ctrl-row">
+          <button class="ctrl-btn" onclick="toggleHideStatus('${tipo}')" style="color:var(--tx3)">${state.hiddenStatuses[tipo]?'👁 Revelar Status':'🙈 Ocultar Status'}</button>
+          <button class="ctrl-btn marco-btn" style="grid-column:unset" onclick="openMarcoModal('${tipo}')">⚡ Marco</button>
+        </div>` : `<button class="ctrl-btn marco-btn" onclick="openMarcoModal('${tipo}')">⚡ Ativar Marco de Poder</button>`}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ── NPCs ──
+function renderNPCs() {
+  const grid = document.getElementById('npc-grid');
+  const empty = document.getElementById('npc-empty');
+  if(!state.npcs.length){ grid.innerHTML=''; grid.appendChild(empty); return; }
+  empty.style.display = 'none';
+  grid.innerHTML = '';
+  const isMestre = state.mode === 'mestre';
+
+  state.npcs.forEach((npc, i) => {
+    const hpPct = Math.max(0, Math.min(100, (npc.hp / npc.hpMax) * 100));
+    const isDead = npc.hp <= 0;
+    const isSecret = npc.secret && !isMestre;
+    const hideHp = npc.hideStatus && !isMestre;
+
+    const card = document.createElement('div');
+    card.className = `npc-card${isDead?' dead':''}${npc.secret?' secret-npc':''}`;
+
+    const displayName = isSecret ? '??? (Desconhecido)' : npc.nome;
+
+    card.innerHTML = `
+      <div class="npc-card-head">
+        <div class="npc-skull">${isDead ? '💀' : npc.secret ? '🔮' : '⚔'}</div>
+        <div class="npc-name-wrap">
+          <span class="npc-name-display">${displayName}</span>
+          ${npc.secret && isMestre ? `<span class="npc-secret-badge">🔮 Secreto</span>` : ''}
+        </div>
+        <div class="npc-def-badge">DEF ${npc.def}</div>
+        ${isMestre ? `
+        <div class="npc-head-btns">
+          <button class="npc-hbtn secret-toggle" onclick="openNPCNotes(${i})" title="Notas & Config">⚙</button>
+          <button class="npc-hbtn del" onclick="confirmRemoveNPCDirect(${i})">✕</button>
+        </div>` : ''}
+      </div>
+      <div class="npc-card-body">
+        ${hideHp ? `<div style="font-family:var(--mono);font-size:.44rem;color:var(--tx3);padding:6px 0;letter-spacing:.1em;text-transform:uppercase">👁 Vida oculta</div>` : `
+        <div class="npc-hp-row">
+          <div class="npc-hp-label">PV</div>
+          <input class="npc-hp-cur" type="number" value="${npc.hp}" min="0"
+            onchange="setNPCHp(${i},this.value)" ${!isMestre && npc.hp <= 0 ? 'disabled' : ''}>
+          <div class="npc-hp-sep">/</div>
+          <div class="npc-hp-max">${npc.hpMax}</div>
+          <div class="npc-hp-track"><div class="npc-hp-fill" style="width:${hpPct}%"></div></div>
+        </div>`}
+        ${isMestre ? `
+        <div class="npc-dmg-row">
+          <input class="npc-dmg-input" type="number" id="npc-dmg-${i}" placeholder="Qtd" min="1">
+          <button class="npc-act-btn" onclick="applyNPCDelta(${i},'damage')">⚔ Dano</button>
+          <button class="npc-act-btn heal-btn" onclick="applyNPCDelta(${i},'heal')">✦ Curar</button>
+        </div>` : ''}
+        ${npc.conditions && npc.conditions.length ? `<div class="npc-conds">${npc.conditions.map(c=>`<span class="cond-chip">${c}</span>`).join('')}</div>` : ''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ── INITIATIVE ──
+function renderInitiative() {
+  const list = document.getElementById('init-list');
+  list.innerHTML = '';
+  state.initiative.forEach((e, i) => {
+    const isCurrent = i === state.turn;
+    const elCfg = EL[e.id];
+    const color = e.tipo === 'portador' && elCfg ? elCfg.color : 'var(--tx3)';
+    const div = document.createElement('div');
+    div.className = `init-entry${isCurrent?' current':''}`;
+    div.innerHTML = `
+      <div class="init-order">${i+1}</div>
+      <div class="init-el-dot" style="background:${color}"></div>
+      <div class="init-name">${e.nome}</div>
+      <input class="init-val-input" type="number" value="${e.init}"
+        onchange="state.initiative[${i}].init=parseInt(this.value)||0;save()">
+    `;
+    list.appendChild(div);
+  });
+}
+
+function renderCondTarget() {
+  const sel = document.getElementById('cond-target-sel');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Selecione —</option>';
+  Object.entries(state.portadores).forEach(([tipo, p]) => {
+    const o = document.createElement('option');
+    o.value = tipo; o.textContent = p.nome !== '—' ? p.nome : tipo;
+    sel.appendChild(o);
+  });
+  state.npcs.forEach((npc, i) => {
+    if(state.mode === 'mestre' || !npc.secret) {
+      const o = document.createElement('option');
+      o.value = `npc-${i}`; o.textContent = npc.secret ? `${npc.nome} 🔮` : npc.nome;
+      sel.appendChild(o);
+    }
+  });
+  sel.value = cur;
+}
+
+function renderCondGrid() {
+  const grid = document.getElementById('cond-grid');
+  grid.innerHTML = '';
+  const target = document.getElementById('cond-target-sel').value;
+  let activeConds = [];
+  if(target.startsWith('npc-')) {
+    const i = parseInt(target.split('-')[1]);
+    activeConds = state.npcs[i]?.conditions || [];
+  } else if(state.portadores[target]) {
+    activeConds = state.portadores[target].conditions || [];
+  }
+  CONDICOES.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = `cond-toggle${activeConds.includes(c)?' on':''}`;
+    btn.textContent = c;
+    btn.onclick = () => toggleCondition(target, c);
+    grid.appendChild(btn);
+  });
+}
+
+function renderCurrentTurn() {
+  const e = state.initiative[state.turn];
+  document.getElementById('current-turn-name').textContent = e ? e.nome : '—';
+}
+
+// ═══════════════════════════════════════════════════════
+// SUA VEZ BANNER
+// ═══════════════════════════════════════════════════════
+let _suaVezTimer = null;
+function showSuaVez(nome) {
+  const banner = document.getElementById('sua-vez-banner');
+  const nomeEl = document.getElementById('svb-nome');
+  nomeEl.textContent = nome;
+  banner.classList.add('visible');
+  banner.onclick = () => hideSuaVez();
+  if(_suaVezTimer) clearTimeout(_suaVezTimer);
+  _suaVezTimer = setTimeout(hideSuaVez, 5000);
+}
+function hideSuaVez() {
+  document.getElementById('sua-vez-banner').classList.remove('visible');
+  if(_suaVezTimer){ clearTimeout(_suaVezTimer); _suaVezTimer=null; }
+}
+
+// ═══════════════════════════════════════════════════════
+// CLIMA / AMBIENTE
+// ═══════════════════════════════════════════════════════
+const CLIMAS = {
+  masmorra: { label:'Masmorra', icon:'🕳', bgA:'rgba(60,0,100,.97)', bgB:'rgba(20,0,50,.97)', ambEsp:'rgba(60,0,100,.08)', ambTempo:'rgba(40,0,80,.06)', ambReal:'rgba(80,0,120,.06)' },
+  floresta:  { label:'Floresta', icon:'🌿', bgA:'rgba(0,40,15,.97)', bgB:'rgba(0,25,10,.97)', ambEsp:'rgba(10,80,30,.08)', ambTempo:'rgba(0,100,40,.06)', ambReal:'rgba(20,60,10,.06)' },
+  cidade:    { label:'Cidade',   icon:'🏛', bgA:'rgba(10,20,60,.97)', bgB:'rgba(5,10,40,.97)', ambEsp:'rgba(20,60,160,.08)', ambTempo:'rgba(10,40,120,.06)', ambReal:'rgba(30,80,180,.06)' },
+  etereo:    { label:'Plano Etéreo', icon:'✨', bgA:'rgba(60,0,160,.97)', bgB:'rgba(20,0,80,.97)', ambEsp:'rgba(120,60,255,.1)', ambTempo:'rgba(80,0,200,.07)', ambReal:'rgba(180,100,255,.07)' },
+  vulcao:    { label:'Vulcão',   icon:'🌋', bgA:'rgba(100,20,0,.97)', bgB:'rgba(60,5,0,.97)', ambEsp:'rgba(200,60,10,.09)', ambTempo:'rgba(160,40,0,.06)', ambReal:'rgba(255,80,0,.07)' },
+  abismo:    { label:'Abismo',   icon:'🌑', bgA:'rgba(5,0,20,.99)', bgB:'rgba(0,0,10,.99)', ambEsp:'rgba(60,0,100,.05)', ambTempo:'rgba(40,0,80,.04)', ambReal:'rgba(80,0,120,.04)' },
+};
+function setClima(key) {
+  // Toggle off if same
+  if(state.clima === key){ state.clima = null; applyClima(null); save(); return; }
+  state.clima = key;
+  applyClima(key);
+  addLog(`🌐 Ambiente: ${CLIMAS[key].icon} ${CLIMAS[key].label}`, 'marco');
+  save();
+}
+function applyClima(key) {
+  const body = document.body;
+  // Remove all clima classes
+  Object.keys(CLIMAS).forEach(k => body.classList.remove(`clima-${k}`));
+  // Update buttons
+  document.querySelectorAll('.clima-btn').forEach(btn => btn.classList.remove('on'));
+  if(!key){
+    document.getElementById('clima-nome-display').textContent = 'Nenhum';
+    // Restore default ambs
+    document.querySelector('.amb-esp').style.opacity = '.035';
+    document.querySelector('.amb-tempo').style.opacity = '.03';
+    document.querySelector('.amb-real').style.opacity = '.03';
+    return;
+  }
+  body.classList.add(`clima-${key}`);
+  document.getElementById(`clima-${key}`)?.classList.add('on');
+  document.getElementById('clima-nome-display').textContent = `${CLIMAS[key].icon} ${CLIMAS[key].label}`;
+  // Shift ambient blob colors
+  const c = CLIMAS[key];
+  document.querySelector('.amb-esp').style.background = c.ambEsp.replace(/rgba\((.+?),.+\)/,'rgba($1,.6)').replace(/rgba\((.+?)\)/,'rgba($1)');
+  // Just adjust opacity for simplicity — keep existing blobs, change opacity slightly
+  document.querySelector('.amb-esp').style.opacity = '.055';
+  document.querySelector('.amb-tempo').style.opacity = '.045';
+  document.querySelector('.amb-real').style.opacity = '.045';
+}
+function renderClima() {
+  if(state.clima) applyClima(state.clima);
+}
+
+// ═══════════════════════════════════════════════════════
+// REAÇÕES ELEMENTAIS
+// ═══════════════════════════════════════════════════════
+const REACOES = {
+  'espaco+tempo':     { nome:'Relativisação', desc:'O espaço-tempo se curva em torno dos portadores. Distâncias e durações tornam-se ilusão — cada metro pode ser um século, cada segundo uma légua.', color:'#a0e8ff', color2:'#6de8a8', bg:'rgba(0,12,30,.97)' },
+  'espaco+realidade': { nome:'Dissolução',    desc:'A trama da realidade se desfaz onde o espaço a encontra. Objetos sólidos tornam-se permeáveis; leis físicas sangram pelas fronteiras do possível.', color:'#7ec8e3', color2:'#f05c5c', bg:'rgba(20,0,25,.97)' },
+  'tempo+realidade':  { nome:'Cristalização', desc:'O tempo congela fragmentos de realidade em âmbar eterno. Instantes se solidificam em matéria; o passado e o presente coexistem como esculturas de luz.', color:'#6de8a8', color2:'#f05c5c', bg:'rgba(5,20,10,.97)' },
+  'espaco+espaco':    { nome:'Ressonância Espacial', desc:'Dois portadores do mesmo elemento criam eco de dobramento. O campo de batalha dobra sobre si mesmo — é impossível saber onde o espaço começa ou termina.', color:'#7ec8e3', color2:'#c8ecff', bg:'rgba(0,10,25,.97)' },
+  'tempo+tempo':      { nome:'Paradoxo Temporal', desc:'Dois fluxos temporais colidem. Ecos do passado e do futuro atravessam o presente — os combatentes agem antes de agir, e sofrem antes de ser atingidos.', color:'#6de8a8', color2:'#b8ffd8', bg:'rgba(0,20,12,.97)' },
+  'realidade+realidade': { nome:'Colapso da Realidade', desc:'Duas versões da realidade se aniquilam mutuamente. Uma zona de pura possibilidade se abre — qualquer coisa pode acontecer, e provavelmente acontecerá.', color:'#f05c5c', color2:'#ffd0d0', bg:'rgba(25,0,0,.97)' },
+};
+const EL_ICONS_REACAO = { espaco:'◇', tempo:'◈', realidade:'⬡' };
+
+function getReacaoKey(a, b) {
+  const pairs = [[a,b],[b,a]];
+  for(const [x,y] of pairs){ const k=`${x}+${y}`; if(REACOES[k]) return k; }
+  return `${[a,b].sort().join('+')}`;
+}
+function previewReacao() {
+  const a = document.getElementById('reacao-el-a').value;
+  const b = document.getElementById('reacao-el-b').value;
+  const key = getReacaoKey(a,b);
+  const r = REACOES[key] || { nome:'Combinação Desconhecida', desc:'Nenhuma reação registrada para essa combinação.' };
+  document.getElementById('rp-nome').textContent = r.nome;
+  document.getElementById('rp-desc').textContent = r.desc;
+  const prev = document.getElementById('reacao-preview');
+  prev.style.borderColor = r.color ? `${r.color}55` : 'var(--br2)';
+  prev.style.boxShadow = r.color ? `0 0 18px -4px ${r.color}44` : 'none';
+}
+function triggerReacao() {
+  const a=document.getElementById('reacao-el-a').value;
+  const b=document.getElementById('reacao-el-b').value;
+  const custom=document.getElementById('reacao-desc-custom').value.trim();
+  const key=getReacaoKey(a,b);
+  const r=REACOES[key]||{nome:'Reação Elemental',desc:'Uma força desconhecida emerge da combinação.',color:'#ffffff',color2:'#aaaaaa',bg:'rgba(10,10,20,.97)'};
+  const desc=custom||r.desc;
+  closeModal('modal-reacao');
+  addLog(`⚗ Reação: ${EL_ICONS_REACAO[a]} + ${EL_ICONS_REACAO[b]} → ${r.nome}!`,'marco');
+  showReacaoOverlay(a,b,r,desc);
+  _emit('reacao',{a,b,r,desc});
+  document.getElementById('reacao-desc-custom').value='';
+}
+function showReacaoOverlay(a, b, r, desc) {
+  const overlay = document.getElementById('reacao-overlay');
+  overlay.style.setProperty('--reacao-color', r.color);
+  overlay.style.setProperty('--reacao-color2', r.color2||r.color);
+  const bg = document.getElementById('reacao-bg');
+  bg.style.background = r.bg; bg.style.opacity='0'; bg.style.animation='none';
+  void bg.offsetWidth; bg.style.animation='reacaoFade .35s forwards';
+  document.getElementById('reacao-icon-a').textContent = EL_ICONS_REACAO[a];
+  document.getElementById('reacao-icon-b').textContent = EL_ICONS_REACAO[b];
+  const elA = EL[a]?.label.split(' ')[1]||a;
+  const elB = EL[b]?.label.split(' ')[1]||b;
+  document.getElementById('reacao-portadores').textContent = `${elA.toUpperCase()} + ${elB.toUpperCase()}`;
+  document.getElementById('reacao-nome').textContent = r.nome;
+  document.getElementById('reacao-desc').textContent = desc;
+  // Reset shockwave
+  const sw = document.getElementById('reacao-shockwave');
+  sw.style.animation='none'; void sw.offsetWidth;
+  sw.style.borderColor = r.color;
+  sw.style.animation='shockwave 1.2s ease-out forwards';
+  spawnReacaoParticles(r.color, r.color2||r.color);
+  overlay.classList.add('active');
+}
+function closeReacao() {
+  document.getElementById('reacao-overlay').classList.remove('active');
+  document.getElementById('reacao-particles').innerHTML='';
+}
+function spawnReacaoParticles(colorA, colorB) {
+  const c = document.getElementById('reacao-particles'); c.innerHTML='';
+  for(let i=0;i<90;i++){
+    const p=document.createElement('div'); p.className='particle';
+    const size=Math.random()*8+2, x=Math.random()*100, dur=Math.random()*5+3, delay=Math.random()*3, dx=(Math.random()-.5)*260;
+    const color = Math.random()>.5?colorA:colorB;
+    p.style.cssText=`width:${size}px;height:${size}px;background:${color};left:${x}%;bottom:${Math.random()*20}%;opacity:${Math.random()*.9+.1};--dx:${dx}px;animation-duration:${dur}s;animation-delay:${delay}s;box-shadow:0 0 ${size*2}px ${color}`;
+    c.appendChild(p);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// INITIATIVE CONTROL
+// ═══════════════════════════════════════════════════════
+function nextTurn() {
+  state.turn++;
+  if(state.turn>=state.initiative.length){ state.turn=0; state.round++; addLog(`━━ Round ${state.round} ━━`,'marco'); }
+  const nome=state.initiative[state.turn]?.nome||'—';
+  addLog(`Vez de ${nome}`,'default');
+  renderAll(); save();
+  showSuaVez(nome);
+  _emit('suaVez',{nome});
+}
+function prevTurn() {
+  state.turn--;
+  if(state.turn<0){ state.turn=Math.max(0,state.initiative.length-1); if(state.round>1)state.round--; }
+  renderAll(); save();
+}
+function sortInitiative() {
+  state.initiative.sort((a,b) => b.init-a.init);
+  state.turn = 0;
+  addLog('Iniciativa ordenada: ' + state.initiative.map(e=>`${e.nome}(${e.init})`).join(' > '), 'default');
+  renderAll(); save();
+}
+
+// ═══════════════════════════════════════════════════════
+// HP / AFI / CORR
+// ═══════════════════════════════════════════════════════
+let _hpTarget = null;
+function openHPModal(tipo, kind) {
+  _hpTarget = { tipo, kind };
+  const p = state.portadores[tipo];
+  document.getElementById('modal-hp-title').textContent = `${kind==='damage'?'⚔ Dano':'✦ Cura'} — ${p.nome}`;
+  document.getElementById('modal-hp-val').value = '';
+  const dd = document.getElementById('delta-display');
+  dd.textContent = '0';
+  dd.style.color = kind==='damage' ? 'var(--real)' : 'var(--tempo)';
+  openModal('modal-hp');
+}
+function updateDelta() {
+  if(!_hpTarget) return;
+  const val = document.getElementById('modal-hp-val').value || 0;
+  const dd = document.getElementById('delta-display');
+  dd.textContent = (_hpTarget.kind==='damage'?'−':'+')+val;
+}
+function applyHP(kind) {
+  const val = parseInt(document.getElementById('modal-hp-val').value)||0;
+  if(!_hpTarget||!val){ closeModal('modal-hp'); return; }
+  const p = state.portadores[_hpTarget.tipo];
+  if(kind==='damage'){ p.hp=Math.max(0,p.hp-val); addLog(`${p.nome} sofreu ${val} de dano. (PV: ${p.hp}/${p.hpMax})`,'damage'); }
+  else { p.hp=Math.min(p.hpMax,p.hp+val); addLog(`${p.nome} recuperou ${val} PV. (${p.hp}/${p.hpMax})`,'heal'); }
+  closeModal('modal-hp'); renderAll(); save();
+}
+function adjustAfi(tipo, delta) {
+  const p = state.portadores[tipo];
+  p.afi = Math.max(0, Math.min(p.afiMax, p.afi+delta));
+  addLog(`${p.nome} — Afinidade: ${p.afi}/${p.afiMax}${delta>0?' +'+delta:' '+delta}`, 'default');
+  renderAll(); save();
+}
+function adjustCorr(tipo, delta) {
+  const p = state.portadores[tipo];
+  p.corr = Math.max(0, Math.min(50, p.corr+delta));
+  if(delta>0) addLog(`⚠ ${p.nome} — Corrupção aumentou para ${p.corr}!`, 'damage');
+  else addLog(`${p.nome} — Corrupção: ${p.corr}`, 'default');
+  renderAll(); save();
+}
+function toggleHideStatus(tipo) {
+  state.hiddenStatuses[tipo] = !state.hiddenStatuses[tipo];
+  addLog(state.hiddenStatuses[tipo] ? `👁 Status de ${state.portadores[tipo].nome} ocultado.` : `👁 Status de ${state.portadores[tipo].nome} revelado.`, 'gm-only');
+  renderAll(); save();
+}
+
+// ═══════════════════════════════════════════════════════
+// NPCs
+// ═══════════════════════════════════════════════════════
+function confirmAddNPC() {
+  const nome = document.getElementById('npc-nome-input').value || 'NPC';
+  const hpMax = parseInt(document.getElementById('npc-hp-input').value)||50;
+  const def = parseInt(document.getElementById('npc-def-input').value)||12;
+  const init = parseInt(document.getElementById('npc-init-input').value)||0;
+  const notes = document.getElementById('npc-notes-input').value||'';
+  const secret = document.getElementById('npc-secret-check').checked;
+  const npc = { nome, hp:hpMax, hpMax, def, init, notes, secret, hideStatus:false, conditions:[] };
+  state.npcs.push(npc);
+  state.initiative.push({ id:`npc-${state.npcs.length-1}`, nome: secret?'???':nome, init, tipo:'npc' });
+  addLog(secret ? `🔮 [SECRETO] Inimigo oculto entrou em campo. (só o Mestre sabe)` : `⚔ ${nome} entrou no campo.`, secret?'gm-only':'default');
+  closeModal('modal-npc');
+  // clear
+  ['npc-nome-input','npc-hp-input','npc-def-input','npc-init-input','npc-notes-input'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('npc-secret-check').checked = false;
+  renderAll(); save();
+}
+
+function applyNPCDelta(i, kind) {
+  const val = parseInt(document.getElementById(`npc-dmg-${i}`)?.value)||0;
+  if(!val) return;
+  const npc = state.npcs[i];
+  if(kind==='damage'){ npc.hp=Math.max(0,npc.hp-val); addLog(`${npc.nome} sofreu ${val} de dano. (PV: ${npc.hp}/${npc.hpMax})`,'damage'); if(npc.hp<=0) addLog(`☠ ${npc.nome} foi derrotado!`,'damage'); }
+  else { npc.hp=Math.min(npc.hpMax,npc.hp+val); addLog(`${npc.nome} recuperou ${val} PV.`,'heal'); }
+  renderAll(); save();
+}
+
+function setNPCHp(i, val) {
+  state.npcs[i].hp = Math.max(0, Math.min(state.npcs[i].hpMax, parseInt(val)||0));
+  if(state.npcs[i].hp<=0) addLog(`☠ ${state.npcs[i].nome} foi derrotado!`,'damage');
+  renderNPCs(); save();
+}
+
+let _npcNotesIdx = null;
+function openNPCNotes(i) {
+  _npcNotesIdx = i;
+  const npc = state.npcs[i];
+  document.getElementById('npc-notes-modal-title').textContent = `⚙ Config — ${npc.nome}`;
+  document.getElementById('npc-notes-edit').value = npc.notes||'';
+  document.getElementById('npc-hide-status-check').checked = !!npc.hideStatus;
+  document.getElementById('npc-secret-edit-check').checked = !!npc.secret;
+  openModal('modal-npc-notes');
+}
+function saveNPCNotes() {
+  if(_npcNotesIdx===null) return;
+  state.npcs[_npcNotesIdx].notes = document.getElementById('npc-notes-edit').value;
+  closeModal('modal-npc-notes'); renderAll(); save();
+}
+function toggleNPCHideStatus() {
+  if(_npcNotesIdx===null) return;
+  state.npcs[_npcNotesIdx].hideStatus = document.getElementById('npc-hide-status-check').checked;
+  save();
+}
+function toggleNPCSecret() {
+  if(_npcNotesIdx===null) return;
+  const npc = state.npcs[_npcNotesIdx];
+  npc.secret = document.getElementById('npc-secret-edit-check').checked;
+  // Update initiative display name
+  const ie = state.initiative.find(e => e.id===`npc-${_npcNotesIdx}`);
+  if(ie) ie.nome = npc.secret ? '???' : npc.nome;
+  renderAll(); save();
+}
+function confirmRemoveNPC() {
+  if(_npcNotesIdx===null) return;
+  if(confirm(`Remover ${state.npcs[_npcNotesIdx].nome}?`)) {
+    removeNPC(_npcNotesIdx);
+    closeModal('modal-npc-notes');
+  }
+}
+function confirmRemoveNPCDirect(i) {
+  if(confirm(`Remover ${state.npcs[i].nome}?`)) removeNPC(i);
+}
+function removeNPC(i) {
+  const nome = state.npcs[i].nome;
+  state.npcs.splice(i,1);
+  state.initiative = state.initiative.filter(e => e.id !== `npc-${i}`);
+  // re-index
+  state.initiative.forEach(e => {
+    if(e.tipo==='npc' && e.id.startsWith('npc-')) {
+      const idx = parseInt(e.id.split('-')[1]);
+      if(idx>i) e.id = `npc-${idx-1}`;
+    }
+  });
+  addLog(`${nome} removido do campo.`, 'default');
+  renderAll(); save();
+}
+
+// ═══════════════════════════════════════════════════════
+// CONDITIONS
+// ═══════════════════════════════════════════════════════
+function toggleCondition(target, cond) {
+  if(!target) return;
+  let arr;
+  if(target.startsWith('npc-')){ const i=parseInt(target.split('-')[1]); arr=state.npcs[i]?.conditions; }
+  else if(state.portadores[target]){ arr=state.portadores[target].conditions; }
+  if(!arr) return;
+  const idx=arr.indexOf(cond);
+  if(idx>-1){ arr.splice(idx,1); }
+  else{ arr.push(cond); addLog(`Condição aplicada em ${target}: ${cond}`,'default'); }
+  renderAll(); save();
+}
+function removeCondPortador(tipo, cond) {
+  const arr=state.portadores[tipo].conditions;
+  const idx=arr.indexOf(cond);
+  if(idx>-1) arr.splice(idx,1);
+  renderAll(); save();
+}
+
+// ═══════════════════════════════════════════════════════
+// MARCOS
+// ═══════════════════════════════════════════════════════
+let _marcoTipo = null;
+function openMarcoModal(tipo) {
+  _marcoTipo = tipo;
+  const p = state.portadores[tipo];
+  document.getElementById('marco-modal-title').textContent = `⚡ Marco — ${p.nome}`;
+  document.getElementById('marco-nome-input').value='';
+  document.getElementById('marco-desc-input').value='';
+  openModal('modal-marco');
+}
+function triggerMarco() {
+  const nome=document.getElementById('marco-nome-input').value||'Marco de Poder';
+  const desc=document.getElementById('marco-desc-input').value||'';
+  const tipo=_marcoTipo;
+  closeModal('modal-marco');
+  const p=state.portadores[tipo];
+  p.corr=Math.min(50,p.corr+1);
+  addLog(`⚡ ${p.nome} ativou "${nome}"! Corrupção: ${p.corr}`,'marco');
+  showMarcoOverlay(tipo,nome,desc);
+  _emit('marco',{tipo,nome,desc});
+  renderAll(); save();
+}
+function showMarcoOverlay(tipo, nome, desc) {
+  const cfg = EL[tipo];
+  const p = state.portadores[tipo];
+  const overlay = document.getElementById('marco-overlay');
+  overlay.style.setProperty('--marco-color', cfg.accent);
+  const bg = document.getElementById('marco-bg');
+  bg.style.background = cfg.marcoBg; bg.style.opacity='0'; bg.style.animation='none';
+  void bg.offsetWidth; bg.style.animation='marcoFadeIn .4s forwards';
+  document.getElementById('marco-icon').textContent = cfg.icon;
+  document.getElementById('marco-portador').textContent = `PORTADOR DE ${cfg.label.split(' ')[1].toUpperCase()} · ${p.nome.toUpperCase()}`;
+  document.getElementById('marco-title').textContent = nome;
+  document.getElementById('marco-desc').textContent = desc;
+  spawnParticles(cfg.accent);
+  overlay.classList.add('active');
+}
+function closeMarco() {
+  document.getElementById('marco-overlay').classList.remove('active');
+  document.getElementById('marco-particles').innerHTML='';
+}
+function spawnParticles(color) {
+  const c = document.getElementById('marco-particles'); c.innerHTML='';
+  for(let i=0;i<70;i++){
+    const p=document.createElement('div'); p.className='particle';
+    const size=Math.random()*7+2, x=Math.random()*100, dur=Math.random()*4+3, delay=Math.random()*3, dx=(Math.random()-.5)*220;
+    p.style.cssText=`width:${size}px;height:${size}px;background:${color};left:${x}%;bottom:${Math.random()*15}%;opacity:${Math.random()*.8+.2};--dx:${dx}px;animation-duration:${dur}s;animation-delay:${delay}s;box-shadow:0 0 ${size*2}px ${color}`;
+    c.appendChild(p);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// DICE
+// ═══════════════════════════════════════════════════════
+let rollVisibility='public';
+function setVisibility(v) {
+  rollVisibility=v;
+  document.getElementById('vis-pub').classList.toggle('on',v==='public');
+  document.getElementById('vis-pub').classList.toggle('pub',v==='public');
+  document.getElementById('vis-sec').classList.toggle('on',v==='secret');
+  document.getElementById('vis-sec').classList.toggle('sec',v==='secret');
+}
+function roll(faces) {
+  const qty=parseInt(document.getElementById('r-qty').value)||1;
+  const mod=parseInt(document.getElementById('r-mod').value)||0;
+  const rolls=Array.from({length:qty},()=>Math.floor(Math.random()*faces)+1);
+  const total=rolls.reduce((a,b)=>a+b,0)+mod;
+  const isSecret=rollVisibility==='secret'&&state.mode==='mestre';
+  const isCrit=faces===20&&rolls[0]===20&&qty===1;
+  const isFail=faces===20&&rolls[0]===1&&qty===1;
+  const formula=`${qty}d${faces}${mod!==0?(mod>0?'+':'')+mod:''}`;
+  const detail=`[${rolls.join(', ')}]${mod!==0?` + ${mod}`:''}`;
+  const logMsg=isSecret?`🔒 [SECRETO] ${formula} = ${total} ${detail}`:`🎲 ${formula} = ${total} ${detail}${isCrit?' 🌟 CRÍTICO!':isFail?' 💀 FALHA CRÍTICA!':''}`;
+  state.lastRoll={faces,qty,mod,rolls,total,secret:isSecret};
+  addLog(logMsg, isSecret?'gm-only':'roll');
+  const rollData={faces,qty,mod,rolls,total,secret:isSecret,isCrit,isFail};
+  _applyRollDisplay(rollData);
+  _emit('roll', rollData);
+  save();
+}
+function revealLastRoll() {
+  if(!state.lastRoll) return;
+  state.lastRoll.secret=false;
+  const r=state.lastRoll;
+  const formula=`${r.qty}d${r.faces}${r.mod!==0?(r.mod>0?'+':'')+r.mod:''}`;
+  const detail=`[${r.rolls.join(', ')}]${r.mod!==0?` + ${r.mod}`:''}`;
+  document.getElementById('roll-big').textContent=r.total;
+  document.getElementById('roll-formula').textContent=formula+' = '+detail;
+  document.getElementById('hidden-indicator').style.display='none';
+  document.getElementById('reveal-row').style.display='none';
+  addLog(`👁 Revelado: ${formula} = ${r.total} ${detail}`,'roll');
+  _emit('revealRoll', r);
+  save();
+}
+function animateDie(faces, result, isSecret) {
+  const anim=document.getElementById('dice-anim');
+  const face=document.getElementById('dice-face');
+  anim.classList.add('active');
+  let t=0;
+  const iv=setInterval(()=>{
+    face.textContent=isSecret?'?':Math.floor(Math.random()*faces)+1;
+    t++;
+    if(t>9){clearInterval(iv);face.textContent=isSecret?'?':result;}
+  },60);
+  setTimeout(()=>anim.classList.remove('active'),950);
+}
+
+// ═══════════════════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════════════════
+function addLog(msg,type='default'){
+  const now=new Date();
+  const ts=`${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  const entry={ts,msg,type};
+  state.log.push(entry);
+  if(state.log.length>250) state.log.shift();
+  appendLogEntry(entry);
+  _logPush(entry);
+}
+function appendLogEntry({ts,msg,type}){
+  const scroll=document.getElementById('log-scroll');
+  const div=document.createElement('div'); div.className='log-entry';
+  const isHidden=type==='gm-only'&&state.mode!=='mestre';
+  div.innerHTML=`<span class="log-ts">${ts}</span><span class="log-msg ${type}${isHidden?' hidden-msg':''}">${isHidden?'[Ação secreta do Mestre]':msg}</span>`;
+  scroll.appendChild(div);
+  scroll.scrollTop=scroll.scrollHeight;
+}
+function clearLog(){
+  state.log=[];
+  document.getElementById('log-scroll').innerHTML='';
+  if(_db) _db.ref('arena/log').remove().catch(()=>{});
+  _seenLogKeys = new Set();
+}
+function rebuildLog(){ const s=document.getElementById('log-scroll'); s.innerHTML=''; state.log.forEach(e=>appendLogEntry(e)); }
+
+// ═══════════════════════════════════════════════════════
+// MODE
+// ═══════════════════════════════════════════════════════
+function toggleMode(){
+  state.mode=state.mode==='mestre'?'player':'mestre';
+  document.getElementById('mode-btn').textContent=`Modo: ${state.mode==='mestre'?'Mestre 👑':'Player ⚔'}`;
+  document.getElementById('vis-btns').style.display=state.mode==='mestre'?'flex':'none';
+  renderAll(); rebuildLog();
+}
+
+// ═══════════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════════
+function openModal(id){ const m=document.getElementById(id); m.classList.add('active'); m.style.display='flex'; }
+function closeModal(id){ const m=document.getElementById(id); m.classList.remove('active'); m.style.display='none'; }
+
+// ═══════════════════════════════════════════════════════
+// FIREBASE — sync em tempo real
+// ═══════════════════════════════════════════════════════
+
+// ID único por aba para evitar loop de sync
+const _CLIENT_ID = Math.random().toString(36).slice(2,10);
+let _db = null;
+let _lastSaveTs = 0;
+let _seenEvents = new Set();
+let _seenLogKeys = new Set();
+
+function _fbInit() {
+  const cfg = {
+    apiKey:"AIzaSyAmJzO3aFceEVu0vX2tTxOjmDWt3MAUNzY",
+    authDomain:"c-painel-ebc14.firebaseapp.com",
+    databaseURL:"https://c-painel-ebc14-default-rtdb.firebaseio.com",
+    projectId:"c-painel-ebc14",
+    storageBucket:"c-painel-ebc14.firebasestorage.app",
+    messagingSenderId:"839388082639",
+    appId:"1:839388082639:web:2c1915fa7f7184b89722ba"
+  };
+  if(!firebase.apps.length) firebase.initializeApp(cfg);
+  _db = firebase.database();
+}
+
+// Salva só os campos necessários, sem ficha (muito grande) e sem mode/log (locais)
+function _buildSaveObj() {
+  const portadoresSafe = {};
+  ['espaco','tempo','realidade'].forEach(t => {
+    const {ficha, ...rest} = state.portadores[t];
+    portadoresSafe[t] = rest;
+  });
+  return {
+    portadores: portadoresSafe,
+    npcs: state.npcs || [],
+    initiative: state.initiative || [],
+    turn: state.turn || 0,
+    round: state.round || 1,
+    clima: state.clima || null,
+    lastRoll: state.lastRoll || null,
+    rollVisibility: state.rollVisibility || 'public',
+    hiddenStatuses: state.hiddenStatuses || {},
+  };
+}
+
+let _saveTimer = null;
+function save() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    if(!_db) return;
+    _lastSaveTs = Date.now();
+    _db.ref('arena/state').set(_buildSaveObj()).catch(console.error);
+  }, 400);
+}
+
+function _applyRemote(data) {
+  ['espaco','tempo','realidade'].forEach(t => {
+    if(data.portadores?.[t]) state.portadores[t] = { ...mkPortador(), ...data.portadores[t] };
+  });
+  if(Array.isArray(data.npcs)) state.npcs = data.npcs;
+  if(Array.isArray(data.initiative) && data.initiative.length) state.initiative = data.initiative;
+  if(data.hiddenStatuses) state.hiddenStatuses = data.hiddenStatuses; else state.hiddenStatuses = {};
+  if(data.turn  !== undefined) state.turn  = data.turn;
+  if(data.round !== undefined) state.round = data.round;
+  state.clima        = data.clima        || null;
+  state.lastRoll     = data.lastRoll     || null;
+  state.rollVisibility = data.rollVisibility || 'public';
+}
+
+// Emite evento visual (dado, marco, reação, sua vez) para todos os outros clientes
+function _emit(type, payload) {
+  if(!_db) return;
+  const ref = _db.ref('arena/events').push();
+  ref.set({ type, payload, from: _CLIENT_ID, ts: Date.now() });
+  // Auto-deleta após 8s
+  setTimeout(() => ref.remove().catch(()=>{}), 8000);
+}
+
+// Adiciona entrada de log no Firebase
+function _logPush(entry) {
+  if(!_db) return;
+  _db.ref('arena/log').push({ ...entry, _ts: Date.now() });
+}
+
+function confirmReset() {
+  if(!confirm('Resetar toda a arena para TODOS os jogadores?')) return;
+  state.portadores = { espaco:mkPortador(), tempo:mkPortador(), realidade:mkPortador() };
+  state.npcs = []; state.turn = 0; state.round = 1;
+  state.clima = null; state.hiddenStatuses = {}; state.lastRoll = null;
+  state.initiative = [
+    {id:'espaco',   nome:'Portador de Espaço',   init:0, tipo:'portador'},
+    {id:'tempo',    nome:'Portador de Tempo',     init:0, tipo:'portador'},
+    {id:'realidade',nome:'Portador de Realidade', init:0, tipo:'portador'},
+  ];
+  state.log = [];
+  if(_db) {
+    _db.ref('arena').set({
+      state: _buildSaveObj(),
+      log: null,
+      events: null,
+    }).catch(console.error);
+  }
+  renderAll(); rebuildLog();
+}
+
+function load(){ return false; } // Firebase é a fonte da verdade
+
+// ═══════════════════════════════════════════════════════
+// OVERLAYS — aplicados localmente (via evento ou local)
+// ═══════════════════════════════════════════════════════
+
+// Aplica o display do dado (animação + números) — usado local e por evento remoto
+function _applyRollDisplay(r) {
+  const formula = `${r.qty}d${r.faces}${r.mod!==0?(r.mod>0?'+':'')+r.mod:''}`;
+  const detail  = `[${r.rolls.join(', ')}]${r.mod!==0?` + ${r.mod}`:''}`;
+  const hide    = r.secret && state.mode !== 'mestre';
+  animateDie(r.faces, hide ? '?' : r.total, hide);
+  document.getElementById('roll-big').textContent = hide ? '???' : r.total;
+  document.getElementById('roll-big').style.color = r.isCrit?'#ffd700':r.isFail?'var(--real)':'#fff';
+  document.getElementById('roll-formula').textContent = hide ? formula : formula+' = '+detail;
+  document.getElementById('roll-individual').textContent = hide ? '' : (r.qty>1 ? detail : '');
+  document.getElementById('hidden-indicator').style.display = hide ? 'inline-flex' : 'none';
+  document.getElementById('reveal-row').style.display = hide ? 'flex' : 'none';
+  if(r.isCrit){ document.getElementById('roll-display').classList.add('crit-flash'); setTimeout(()=>document.getElementById('roll-display').classList.remove('crit-flash'),900); }
+  if(r.isFail){ document.getElementById('roll-display').classList.add('fail-flash'); setTimeout(()=>document.getElementById('roll-display').classList.remove('fail-flash'),900); }
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT + CONEXÃO FIREBASE
+// ═══════════════════════════════════════════════════════
+function _statusBar(msg, ok) {
+  let bar = document.getElementById('_fbBar');
+  if(!bar){ bar=document.createElement('div'); bar.id='_fbBar';
+    bar.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:99999;font-family:var(--mono);font-size:.46rem;letter-spacing:.12em;text-align:center;padding:5px 12px;transition:opacity .6s';
+    document.body.appendChild(bar); }
+  bar.textContent=msg; bar.style.opacity='1';
+  bar.style.background = ok?'rgba(109,232,168,.15)':'rgba(240,92,92,.15)';
+  bar.style.color = ok?'var(--tempo)':'var(--real)';
+  bar.style.borderTop = ok?'1px solid var(--tempo-b)':'1px solid var(--real-b)';
+  const dot = document.getElementById('fb-dot');
+  if(dot){ dot.style.background=ok?'var(--tempo)':'var(--real)'; dot.style.boxShadow=ok?'0 0 8px var(--tempo)':'0 0 8px var(--real)'; }
+  if(ok) setTimeout(()=>{ bar.style.opacity='0'; },3000);
+}
+
+function initArena() {
+  renderAll(); rebuildLog(); previewReacao();
+
+  _fbInit();
+  _statusBar('🔴 Conectando…', false);
+
+  let firstLoad = true;
+
+  // ── 1. Escuta estado principal ──
+  _db.ref('arena/state').on('value', snap => {
+    const data = snap.val();
+    // Ignora echo das próprias escritas (janela de 1.5s)
+    if(Date.now() - _lastSaveTs < 1500) return;
+    if(!data) {
+      // Banco vazio — primeira sessão
+      if(firstLoad) {
+        firstLoad = false;
+        openModal('modal-import');
+        addLog('Arena iniciada. Que os 3 Caídos lutem.','marco');
+        save();
+        _statusBar('🟢 Arena Online — nova sessão', true);
+      }
+      return;
+    }
+    _applyRemote(data);
+    renderAll();
+    // Sincroniza display do dado
+    if(state.lastRoll) _applyRollDisplay({...state.lastRoll, isCrit:false, isFail:false});
+    if(firstLoad) {
+      firstLoad = false;
+      closeModal('modal-import');
+      previewReacao();
+      _statusBar('🟢 Arena Online — sincronizado', true);
+    } else {
+      _statusBar('🟢 Arena Online — sincronizado', true);
+    }
+  });
+
+  // ── 2. Escuta log ──
+  _db.ref('arena/log').on('value', snap => {
+    const data = snap.val(); if(!data) return;
+    Object.entries(data)
+      .sort(([,a],[,b])=>(a._ts||0)-(b._ts||0))
+      .forEach(([key,entry]) => {
+        if(_seenLogKeys.has(key)) return;
+        _seenLogKeys.add(key);
+        const already = state.log.some(l=>l.ts===entry.ts&&l.msg===entry.msg);
+        if(!already) {
+          state.log.push({ts:entry.ts, msg:entry.msg, type:entry.type});
+          appendLogEntry({ts:entry.ts, msg:entry.msg, type:entry.type});
+        }
+      });
+  });
+
+  // ── 3. Escuta eventos visuais ──
+  _db.ref('arena/events').on('value', snap => {
+    const data = snap.val(); if(!data) return;
+    const now = Date.now();
+    Object.entries(data).forEach(([key,evt]) => {
+      if(_seenEvents.has(key)) return;
+      if(evt.from === _CLIENT_ID) return;        // próprio cliente
+      if(now - (evt.ts||0) > 8000) return;       // evento velho
+      _seenEvents.add(key);
+      const p = evt.payload || {};
+      if(evt.type==='roll')        _applyRollDisplay(p);
+      if(evt.type==='revealRoll')  {
+        const r=p; const formula=`${r.qty}d${r.faces}${r.mod!==0?(r.mod>0?'+':'')+r.mod:''}`;
+        const detail=`[${r.rolls.join(', ')}]${r.mod!==0?` + ${r.mod}`:''}`;
+        document.getElementById('roll-big').textContent=r.total;
+        document.getElementById('roll-formula').textContent=formula+' = '+detail;
+        document.getElementById('hidden-indicator').style.display='none';
+        document.getElementById('reveal-row').style.display='none';
+      }
+      if(evt.type==='marco')       showMarcoOverlay(p.tipo,p.nome,p.desc);
+      if(evt.type==='reacao')      showReacaoOverlay(p.a,p.b,p.r,p.desc);
+      if(evt.type==='suaVez')      showSuaVez(p.nome);
+    });
+  });
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.target.matches('input,textarea,select')) nextTurn();
+  if(e.key==='Escape'){
+    closeMarco(); closeReacao(); hideSuaVez();
+    document.querySelectorAll('.modal-overlay.active').forEach(m=>m.style.display='none');
+  }
+});
+</script>
+
+<!-- Firebase Compat SDK (síncrono, sem module, sem problema de timing) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// Inicia a arena depois que os SDKs carregaram
+window.addEventListener('load', () => initArena());
+</script>
+</body>
+</html>
